@@ -1,0 +1,21 @@
+# Repository-wide ignores. Module-specific ignores live in each module
+# (e.g. backend/.gitignore).
+
+# Environment files — never commit real configuration or secrets.
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Logs
+*.log
