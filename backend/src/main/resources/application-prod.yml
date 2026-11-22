@@ -1,0 +1,10 @@
+# Production-like profile (Docker image, cloud deployment).
+#
+# There are intentionally no datasource values here: SPRING_DATASOURCE_URL,
+# SPRING_DATASOURCE_USERNAME and SPRING_DATASOURCE_PASSWORD must be provided by
+# the environment, so a misconfigured deployment fails fast at startup instead
+# of connecting somewhere unexpected.
+
+logging:
+  level:
+    root: INFO

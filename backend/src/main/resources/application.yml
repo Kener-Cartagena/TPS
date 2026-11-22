@@ -1,0 +1,25 @@
+# Shared configuration for every environment.
+#
+# Environment-specific values live in application-<profile>.yml. Outside local
+# development, the database connection is supplied through Spring Boot's
+# standard environment variables (relaxed binding), never hard-coded:
+#   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+
+spring:
+  application:
+    name: tps
+
+  profiles:
+    # Used only when SPRING_PROFILES_ACTIVE is not set (local development).
+    default: dev
+
+  jpa:
+    # Flyway owns the schema; Hibernate only checks that entities match it.
+    hibernate:
+      ddl-auto: validate
+    # Keep database access inside the service layer, not in the web layer.
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
