@@ -1,0 +1,17 @@
+# Local development profile.
+#
+# Values match docker-compose.yml / .env.example so the app runs against the
+# local PostgreSQL container with zero setup. These are throwaway local
+# credentials, not secrets. To override them, set SPRING_DATASOURCE_URL,
+# SPRING_DATASOURCE_USERNAME or SPRING_DATASOURCE_PASSWORD (environment
+# variables take precedence over this file).
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tps
+    username: tps
+    password: tps_local_password
+
+logging:
+  level:
+    io.github.kenercartagena.tps: DEBUG
