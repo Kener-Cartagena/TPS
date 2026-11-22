@@ -1,0 +1,46 @@
+# Local development environment.
+#
+#   docker compose up -d                    -> PostgreSQL only (run the app from your IDE / mvnw)
+#   docker compose --profile app up --build -> PostgreSQL + the backend container
+#
+# Values come from .env (copy .env.example to .env). Defaults below match
+# backend/src/main/resources/application-dev.yml.
+
+name: tps
+
+services:
+  postgres:
+    image: postgres:18-alpine   # keep aligned with TestcontainersConfiguration
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tps}
+      POSTGRES_USER: ${POSTGRES_USER:-tps}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tps_local_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18+ images store data under /var/lib/postgresql/<major>/,
+      # so the volume is mounted at the parent directory.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tps}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tps}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-tps_local_password}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
