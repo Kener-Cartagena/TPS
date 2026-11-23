@@ -12,6 +12,12 @@ spring:
     username: tps
     password: tps_local_password
 
+management:
+  endpoint:
+    health:
+      # Locally it is useful to see why health is DOWN (e.g. database unreachable).
+      show-details: always
+
 logging:
   level:
     io.github.kenercartagena.tps: DEBUG

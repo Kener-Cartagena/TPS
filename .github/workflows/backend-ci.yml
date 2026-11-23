@@ -2,12 +2,19 @@
 # Backend CI — Continuous Integration for the Spring Boot backend.
 #
 # What it does: on every push / pull request to main or develop, GitHub starts
-# a fresh Linux virtual machine ("runner"), downloads the code, installs
-# Java 25, and runs `./mvnw verify` (compile + all tests, including the
-# Testcontainers tests that start a real PostgreSQL in Docker).
+# fresh Linux virtual machines ("runners") and runs two independent jobs IN
+# PARALLEL:
 #
-# If any step fails, the run is marked ❌ and — with branch protection enabled —
+#   build   -> compile + all tests (`./mvnw verify`, including Testcontainers
+#              tests with a real PostgreSQL), test report and coverage report.
+#   docker  -> builds the production Docker image (without publishing it), so a
+#              broken Dockerfile is caught in the PR, not on deployment day.
+#
+# If any job fails, the run is marked ❌ and — with branch protection enabled —
 # the pull request cannot be merged.
+#
+# Coming in Phase 9 (CD): a `publish` job with `needs: [build, docker]` that
+# pushes the image to a registry and deploys it, only after both jobs pass.
 # =============================================================================
 
 # Name shown in the GitHub "Actions" tab.
@@ -23,7 +30,8 @@ on:
   workflow_dispatch:
 
 # ---- Security: least privilege -----------------------------------------------
-# The automatic GITHUB_TOKEN can only read the repository contents.
+# Default for every job: the automatic GITHUB_TOKEN can only read the code.
+# A job that needs more asks for it explicitly (see `build` below).
 permissions:
   contents: read
 
@@ -43,6 +51,12 @@ jobs:
     runs-on: ubuntu-latest     # Free GitHub-hosted runner (Docker preinstalled)
     timeout-minutes: 15        # Kill stuck runs instead of waiting forever
 
+    # Job-level permissions REPLACE the workflow-level ones, so `contents: read`
+    # is repeated. `checks: write` lets the test reporter create a check run.
+    permissions:
+      contents: read
+      checks: write
+
     defaults:
       run:
         working-directory: backend   # Every `run:` step executes inside backend/
@@ -61,18 +75,63 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # 3. Compile, run all tests, and package the application.
+      # 3. Compile, run all tests, generate the coverage report, and package.
       #    -B  = batch mode (no interactive output)
       #    -ntp = no transfer progress (cleaner logs)
       - name: Build and run tests
         run: ./mvnw -B -ntp verify
 
-      # 4. If something failed, upload the test reports so you can download
-      #    and inspect them from the run's "Artifacts" section.
-      - name: Upload test reports
-        if: failure()
+      # 4. Publish the JUnit results as a "Test results" check on the commit /
+      #    PR: how many tests passed, failed or were skipped, with details for
+      #    each failure. `!cancelled()` = run even if the tests failed (that is
+      #    exactly when the report is most useful), but not if the run was
+      #    cancelled.
+      - name: Publish test results
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: Test results
+          path: backend/target/surefire-reports/TEST-*.xml
+          reporter: java-junit
+          fail-on-empty: false
+
+      # 5. Keep the raw test reports (surefire) and the coverage report (JaCoCo)
+      #    as downloadable "Artifacts" of the run (bottom of the run summary page).
+      #    Open jacoco/index.html after downloading to browse coverage per class.
+      - name: Upload test and coverage reports
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: surefire-reports
-          path: backend/target/surefire-reports/
+          name: backend-reports
+          path: |
+            backend/target/surefire-reports/
+            backend/target/site/jacoco/
           retention-days: 7
+          if-no-files-found: ignore
+
+  docker:
+    # Also a candidate for a required status check (see CONTRIBUTING.md).
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      # Buildx is Docker's modern builder; it enables the GitHub Actions cache below.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Builds backend/Dockerfile exactly as production would, but does NOT push
+      # the image anywhere (push: false). Layers are cached in GitHub's cache
+      # (type=gha), so unchanged steps — like downloading Maven dependencies —
+      # are reused on the next run.
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          push: false
+          tags: tps-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
