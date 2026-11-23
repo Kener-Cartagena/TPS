@@ -6,5 +6,10 @@
 # of connecting somewhere unexpected.
 
 logging:
+  # One JSON object per line (Elastic Common Schema), ready for log platforms.
+  # MDC values such as requestId are included automatically.
+  structured:
+    format:
+      console: ecs
   level:
     root: INFO
