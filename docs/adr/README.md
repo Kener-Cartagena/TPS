@@ -9,6 +9,7 @@ accepted — if a decision changes, a new ADR supersedes the old one.
 | [0001](0001-modular-monolith.md) | Modular monolith with Spring Modulith | Accepted |
 | [0002](0002-postgresql-and-flyway.md) | PostgreSQL with Flyway migrations | Accepted |
 | [0003](0003-branching-and-commit-conventions.md) | Branching model and commit conventions | Accepted |
+| [0004](0004-api-conventions-and-error-format.md) | REST API conventions and error format | Accepted |
 
 New ADRs: copy the structure of an existing one, use the next number, and add
 it to this table.
