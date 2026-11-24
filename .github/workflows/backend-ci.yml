@@ -36,11 +36,17 @@ permissions:
   contents: read
 
 # ---- Concurrency: avoid wasted runs ------------------------------------------
-# If you push again to the same branch/PR while a run is in progress, the old
-# run is cancelled and only the newest commit is checked.
+# Runs are grouped per pull request (by number) or per branch (for pushes), so a
+# PR run never shares a group with a push run on main/develop.
+#   - Pull requests: pushing again cancels the old run; only the newest commit
+#     matters.
+#   - Pushes to main/develop: never cancelled. Every commit that lands on a
+#     protected branch must be fully checked.
+# (A PR run that starts after its PR was merged gets the base branch as
+# github.ref; grouping by ref alone made it cancel the push run on main.)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # ---- Jobs: WHAT runs ---------------------------------------------------------
 jobs:
@@ -127,6 +133,9 @@ jobs:
       # the image anywhere (push: false). Layers are cached in GitHub's cache
       # (type=gha), so unchanged steps — like downloading Maven dependencies —
       # are reused on the next run.
+      # ignore-error=true: the cache is only an optimization. Some runs (e.g. a
+      # PR run that starts after its PR was merged) get a token without cache
+      # write access; that must not fail a build whose image built correctly.
       - name: Build image
         uses: docker/build-push-action@v7
         with:
@@ -134,4 +143,4 @@ jobs:
           push: false
           tags: tps-backend:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
