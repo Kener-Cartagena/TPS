@@ -2,7 +2,8 @@
 #
 # Values match docker-compose.yml / .env.example so the app runs against the
 # local PostgreSQL container with zero setup. These are throwaway local
-# credentials, not secrets. To override them, set SPRING_DATASOURCE_URL,
+# credentials, not secrets: they only work on your machine and are public in
+# the repository, so NEVER reuse them in a real deployment. To override them, set SPRING_DATASOURCE_URL,
 # SPRING_DATASOURCE_USERNAME or SPRING_DATASOURCE_PASSWORD (environment
 # variables take precedence over this file).
 
@@ -17,6 +18,19 @@ management:
     health:
       # Locally it is useful to see why health is DOWN (e.g. database unreachable).
       show-details: always
+
+tps:
+  security:
+    jwt:
+      # Throwaway local signing key (public in the repository). Never use it elsewhere.
+      secret: RAP/a0KHL10XXuMCpI2NJGvurrdPGLuXr75mUWH84iE=
+    bootstrap:
+      admin:
+        # Created on the first start against an empty database. Log in with these
+        # credentials, then create the other users from the API.
+        username: admin
+        password: admin-local-password
+        full-name: Local Administrator
 
 logging:
   level:

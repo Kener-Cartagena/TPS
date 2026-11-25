@@ -1,9 +1,12 @@
 package io.github.kenercartagena.tps.shared.internal;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,9 +16,15 @@ import org.springframework.context.annotation.Configuration;
  * Metadata of the generated OpenAPI document ({@code /v3/api-docs}), shown at the top
  * of Swagger UI ({@code /swagger-ui.html}). Endpoints are discovered by springdoc from
  * the controllers; only paths under {@code /api/**} are documented.
+ *
+ * <p>Every operation requires a bearer token by default ({@value #BEARER_AUTH}); public
+ * operations such as login opt out with an empty {@code @SecurityRequirements}. Swagger
+ * UI shows an <em>Authorize</em> button to paste the token once for all requests.
  */
 @Configuration(proxyBeanMethods = false)
 class OpenApiConfiguration {
+
+    static final String BEARER_AUTH = "bearerAuth";
 
     @Bean
     OpenAPI tpsOpenApi(ObjectProvider<BuildProperties> buildProperties) {
@@ -31,10 +40,20 @@ class OpenApiConfiguration {
                                 REST API of the Transaction Processing System (TPS): accounts, \
                                 double-entry ledger, transfers and payments through simulated \
                                 providers. Errors follow RFC 9457 (Problem Details); see the \
-                                API conventions in the repository.""")
+                                API conventions in the repository.
+
+                                Authentication: obtain a token with `POST /api/v1/auth/tokens`, \
+                                then click **Authorize** and paste it.""")
                         .license(new License().name("Portfolio project, not for real funds")))
                 .externalDocs(new ExternalDocumentation()
                         .description("Source code and documentation")
-                        .url("https://github.com/Kener-Cartagena/TPS"));
+                        .url("https://github.com/Kener-Cartagena/TPS"))
+                .components(new Components()
+                        .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Access token from POST /api/v1/auth/tokens")))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
     }
 }
