@@ -45,7 +45,7 @@ security model, the permission matrix and the configuration are in
 | `403 Forbidden` | Valid token, missing permission | `ACCESS_DENIED` |
 | `404 Not Found` | Unknown endpoint or resource (authenticated callers) | `NOT_FOUND` or a module code, e.g. `USER_NOT_FOUND` |
 | `405`, `406`, `415` | Wrong method, `Accept` or `Content-Type` | `METHOD_NOT_ALLOWED`, `NOT_ACCEPTABLE`, `UNSUPPORTED_MEDIA_TYPE` |
-| `409 Conflict` | Conflicts with the current state: duplicate, concurrent modification | module code, e.g. `USERNAME_ALREADY_EXISTS` |
+| `409 Conflict` | Conflicts with the current state: duplicate, concurrent modification | module code, e.g. `USERNAME_ALREADY_EXISTS`; `CONCURRENT_MODIFICATION` when another request changed the resource at the same time (read it again and retry) |
 | `422 Unprocessable Content` | Valid request that breaks a business rule | module code, e.g. `INSUFFICIENT_FUNDS` |
 | `500 Internal Server Error` | Unexpected failure | `INTERNAL_ERROR` |
 
@@ -95,7 +95,9 @@ The response is Spring Data's stable page format:
 | Identifiers | Opaque strings (UUID) | `"3f2a9c1e-..."` |
 
 Amounts are strings so that no client parses them as binary floating point
-(`0.1 + 0.2 != 0.3`). In Java they are `BigDecimal`.
+(`0.1 + 0.2 != 0.3`). In Java they are `shared.money.Money` (`BigDecimal` plus
+currency), always with the currency's 2 decimal places (`"10.00"`); an amount with
+more decimals is rejected, never rounded. Supported currencies: `HNL`, `USD`.
 
 ## Errors: RFC 9457 Problem Details
 

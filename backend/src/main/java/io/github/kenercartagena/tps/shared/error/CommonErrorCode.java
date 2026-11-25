@@ -20,6 +20,8 @@ public enum CommonErrorCode implements ErrorCode {
     NOT_FOUND,
     /** Any other conflict with the current state of a resource. */
     CONFLICT,
+    /** Someone else changed the resource at the same time; read it again and retry. */
+    CONCURRENT_MODIFICATION,
     METHOD_NOT_ALLOWED,
     NOT_ACCEPTABLE,
     UNSUPPORTED_MEDIA_TYPE,

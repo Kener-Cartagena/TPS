@@ -7,10 +7,11 @@ A backend platform for processing financial transactions — accounts, a
 double-entry ledger, internal transfers, payments through simulated providers,
 reversals, and reconciliation — built with **Java 25** and **Spring Boot 4**.
 
-> **Status: Phase 2 — identity, security and access control.** Users, JWT
-> authentication, permission-based authorization, account lockout and security
-> scanning in CI are in place, on top of the API foundation of Phase 1. No
-> financial functionality is implemented yet. See the [roadmap](#roadmap).
+> **Status: Phase 3 — accounts and financial ledger.** Account holders, customer
+> accounts and a double-entry ledger with immutable, balanced entries are in
+> place, enforced by the application and by PostgreSQL itself, safe under
+> concurrency and verifiable at any time. Money does not move through the API yet:
+> the transaction engine comes in Phase 4. See the [roadmap](#roadmap).
 >
 > TPS is a portfolio project. It uses simulated financial providers and is not
 > certified or intended to process real customer funds.
@@ -40,8 +41,12 @@ fails the build if a module uses another module's internals.
 |---|---|
 | `shared` | Cross-cutting building blocks: error categories and codes, API base paths, global error handling, request id logging, clock, OpenAPI metadata |
 | `identity` | Users, login (JWT), roles and permissions, account lockout — see [docs/security.md](docs/security.md) |
+| `ledger` | General ledger: double-entry journal entries, balances, running balances, verification — see [docs/ledger.md](docs/ledger.md) |
+| `accounts` | Account holders (DNI, RTN, passport), customer accounts with check-digit numbers, status and its history |
 
-Business modules (accounts, ledger, transactions, ...) are added phase by phase.
+Dependencies only go one way: `accounts → ledger → shared`, and every business
+module uses `identity` only for its permission names. Business modules
+(transactions, transfers, payments, ...) are added phase by phase.
 Architectural decisions are documented as ADRs in [docs/adr](docs/adr/README.md),
 and the REST rules in [docs/api-conventions.md](docs/api-conventions.md).
 
@@ -59,9 +64,11 @@ and the REST rules in [docs/api-conventions.md](docs/api-conventions.md).
 │   ├── PLAN.md           Development plan and phases
 │   ├── api-conventions.md  REST API and error format rules
 │   ├── security.md       Security model: roles, permissions, authentication
+│   ├── ledger.md         Accounts and ledger: double entry, rules, endpoints
 │   └── adr/              Architecture Decision Records
 ├── .github/
 │   ├── workflows/        CI pipelines (GitHub Actions)
+│   ├── scripts/          Scripts used by the pipelines (migration guard, summary)
 │   └── dependabot.yml    Automated dependency updates
 └── docker-compose.yml    Local environment (PostgreSQL + optional backend)
 ```
@@ -114,6 +121,11 @@ curl http://localhost:8080/api/v1/users/me -H "Authorization: Bearer <accessToke
 In Swagger UI, log in with `POST /api/v1/auth/tokens`, click **Authorize** and
 paste the token. Roles, permissions and all endpoints:
 [docs/security.md](docs/security.md).
+
+The administrator only manages users (segregation of duties). To work with
+accounts, create an `OPERATOR` (and an `AUDITOR` to read the ledger) with
+`POST /api/v1/users`, log in as that user, then follow the examples in
+[docs/ledger.md](docs/ledger.md#example-open-an-account-as-an-operator).
 
 ### Run everything in containers
 
@@ -181,12 +193,13 @@ paginated (`?page=0&size=20`). Full rules:
 ## Continuous integration
 
 Every push and pull request to `main` or `develop` runs
-[Backend CI](.github/workflows/backend-ci.yml), with two parallel jobs:
+[Backend CI](.github/workflows/backend-ci.yml), with three parallel jobs:
 
 | Job | What it checks |
 |---|---|
-| **Build and test** | Compiles with Java 25, runs the full test suite (including database tests against PostgreSQL and module boundary checks), publishes a *Test results* check and uploads test and coverage (JaCoCo) reports as artifacts |
+| **Build and test** | Compiles with Java 25, runs the full test suite (including database, concurrency and module boundary tests against PostgreSQL), publishes a *Test results* check, writes a tests and coverage summary on the run page, and uploads test and coverage (JaCoCo) reports as artifacts |
 | **Build Docker image** | Builds the production image from `backend/Dockerfile` (not published) |
+| **Migration guard** | Fails if a merged Flyway migration is modified, deleted or renamed, or if a new one is misnamed or out of order |
 
 [Security](.github/workflows/security.yml) runs on every push and pull request
 to `main` or `develop`, and every Monday:
@@ -207,7 +220,7 @@ dependencies, GitHub Actions and Docker base images.
 | 0 | Project foundation and architecture | ✅ Done |
 | 1 | Core backend and API foundation | ✅ Done |
 | 2 | Identity, security and access control | ✅ Done |
-| 3 | Accounts and financial ledger | Planned |
+| 3 | Accounts and financial ledger | ✅ Done |
 | 4 | Transaction processing engine | Planned |
 | 5 | Internal transfers and reversals | Planned |
 | 6 | Payment processing and simulated integrations | Planned |

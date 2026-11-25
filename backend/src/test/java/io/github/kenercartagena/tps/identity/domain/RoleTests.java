@@ -18,14 +18,15 @@ class RoleTests {
     }
 
     @Test
-    void operatorHasNoUserPermissions() {
-        // Financial permissions (accounts, transfers, ...) arrive in later phases.
-        assertThat(Role.OPERATOR.permissions()).isEmpty();
+    void operatorManagesAccountsButNotUsersNorTheLedger() {
+        assertThat(Role.OPERATOR.permissions())
+                .containsExactlyInAnyOrder(Permissions.ACCOUNT_READ, Permissions.ACCOUNT_MANAGE);
     }
 
     @Test
     void auditorCanOnlyRead() {
-        assertThat(Role.AUDITOR.permissions()).containsExactly(Permissions.USER_READ);
+        assertThat(Role.AUDITOR.permissions()).containsExactlyInAnyOrder(
+                Permissions.USER_READ, Permissions.ACCOUNT_READ, Permissions.LEDGER_READ);
     }
 
     @Test
@@ -34,6 +35,27 @@ class RoleTests {
             assertThat(role.permissions().contains(Permissions.USER_MANAGE))
                     .as("%s can manage users", role)
                     .isEqualTo(role == Role.SYSTEM_ADMIN);
+        }
+    }
+
+    /** Segregation of duties: whoever manages access never manages money, and vice versa. */
+    @Test
+    void noRoleManagesBothUsersAndAccounts() {
+        for (Role role : Role.values()) {
+            assertThat(role.permissions().contains(Permissions.USER_MANAGE)
+                    && role.permissions().contains(Permissions.ACCOUNT_MANAGE))
+                    .as("%s manages users and accounts", role)
+                    .isFalse();
+        }
+    }
+
+    /** The ledger is the auditor's view of the books; operators work through accounts. */
+    @Test
+    void onlyTheAuditorReadsTheLedger() {
+        for (Role role : Role.values()) {
+            assertThat(role.permissions().contains(Permissions.LEDGER_READ))
+                    .as("%s reads the ledger", role)
+                    .isEqualTo(role == Role.AUDITOR);
         }
     }
 }

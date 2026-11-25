@@ -32,8 +32,9 @@ A permission is added in the phase that introduces the operation it protects:
 |---|:-:|:-:|:-:|---|
 | `USER_READ` | ✔ | | ✔ | 2 ✅ |
 | `USER_MANAGE` | ✔ | | | 2 ✅ |
-| `ACCOUNT_READ` | | ✔ | ✔ | 3 |
-| `ACCOUNT_MANAGE` | | ✔ | | 3 |
+| `ACCOUNT_READ` | | ✔ | ✔ | 3 ✅ |
+| `ACCOUNT_MANAGE` | | ✔ | | 3 ✅ |
+| `LEDGER_READ` | | | ✔ | 3 ✅ |
 | `TRANSACTION_READ` | | ✔ | ✔ | 4 |
 | `TRANSFER_EXECUTE` | | ✔ | | 5 |
 | `REVERSAL_EXECUTE` | | ✔ | | 5 |
@@ -41,6 +42,10 @@ A permission is added in the phase that introduces the operation it protects:
 | `RECONCILIATION_RUN` | | ✔ | | 7 |
 | `RECONCILIATION_READ` | | ✔ | ✔ | 7 |
 | `AUDIT_READ` | | | ✔ | 7 |
+
+`LEDGER_READ` (internal accounts, journal entries, ledger verification) is for
+auditors only: operators work with customer accounts, and their balances and
+movements, through `ACCOUNT_READ`.
 
 Rules enforced for every caller:
 
@@ -59,6 +64,9 @@ Rules enforced for every caller:
 | `GET /api/v1/users/{userId}` | `USER_READ` | Get a user |
 | `PUT /api/v1/users/{userId}/role` | `USER_MANAGE` | Change a user's role |
 | `PUT /api/v1/users/{userId}/status` | `USER_MANAGE` | Activate (also unlocks) or disable a user |
+
+Account holders, accounts and the ledger (`ACCOUNT_READ`, `ACCOUNT_MANAGE`,
+`LEDGER_READ`): see the endpoint table in [ledger.md](ledger.md#endpoints).
 
 Also public: `/actuator/health/**`, `/actuator/info`, `/v3/api-docs`,
 `/swagger-ui.html`. Everything else requires a token; unknown URLs answer `401`
@@ -149,6 +157,7 @@ oversights:
   with the dashboard (Phase 10).
 - **No rate limiting per IP address**, only the per-account lockout (Phase 8).
 - **No persistent audit trail yet.** Security events (logins, user changes) are
-  written to the logs with user ids; the audit module stores them later.
+  written to the logs with user ids; the audit module stores them later. Account
+  status changes already have their own immutable history (who, when, why).
 - **No password reset by an administrator.** A user who forgets their password
   needs a new account for now.

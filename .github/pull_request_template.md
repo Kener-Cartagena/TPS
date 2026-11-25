@@ -22,6 +22,6 @@ cd backend && ./mvnw verify
 
 - [ ] CI is green
 - [ ] Tests added or updated for new behavior
-- [ ] Database changes are in a new Flyway migration (existing migrations untouched)
+- [ ] Database changes are in a new Flyway migration (existing migrations untouched; checked by *Migration guard*)
 - [ ] No secrets, credentials or `.env` files committed
 - [ ] Documentation updated (README / ADR) if behavior or architecture changed

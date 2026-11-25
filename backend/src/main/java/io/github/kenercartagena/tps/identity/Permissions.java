@@ -24,6 +24,15 @@ public final class Permissions {
     /** Create users and change their role or status. */
     public static final String USER_MANAGE = "USER_MANAGE";
 
+    /** View account holders, accounts, balances, movements and status history. */
+    public static final String ACCOUNT_READ = "ACCOUNT_READ";
+
+    /** Register account holders, open accounts and change their status. */
+    public static final String ACCOUNT_MANAGE = "ACCOUNT_MANAGE";
+
+    /** View the general ledger: internal accounts, journal entries and its verification. */
+    public static final String LEDGER_READ = "LEDGER_READ";
+
     private Permissions() {
     }
 }

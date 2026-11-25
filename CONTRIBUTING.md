@@ -19,11 +19,17 @@ reasoning behind it is recorded in
    ```
 4. Push the branch and open a pull request into `develop`. Fill in the PR
    template.
-5. Merge once the checks are green. Required: *Build and test* and *Build
-   Docker image* (**Backend CI**). Also review the **Security** workflow
-   (*CodeQL* and *Dependency review*).
-6. When a phase is complete, open a pull request from `develop` into `main`,
-   merge it, and tag the release (`vX.Y.Z`).
+5. Merge once the checks are green. Required: *Build and test*, *Build
+   Docker image* and *Migration guard* (**Backend CI**). Also review the
+   **Security** workflow (*CodeQL* and *Dependency review*).
+6. When a phase is complete, release it:
+   1. On a `release/vX.Y.Z` branch from `develop`, set the version in
+      `backend/pom.xml` to `X.Y.Z` (without `-SNAPSHOT`) and merge it into
+      `develop` through a pull request.
+   2. Open a pull request from `develop` into `main` and merge it.
+   3. Tag the merge commit on `main` (`vX.Y.Z`).
+   4. The next phase starts by bumping `develop` to the next
+      `-SNAPSHOT` version (e.g. `0.5.0-SNAPSHOT`).
 
 ## Branch names
 
@@ -62,7 +68,14 @@ by hyphens, e.g. `feature/phase-3-accounts-ledger`.
 - Code that needs the current time injects `java.time.Clock` instead of calling
   `Instant.now()`, so it can be tested with a fixed clock.
 - Schema changes are new Flyway migrations; merged migrations are never edited
-  — see [ADR 0002](docs/adr/0002-postgresql-and-flyway.md).
+  — see [ADR 0002](docs/adr/0002-postgresql-and-flyway.md). The *Migration
+  guard* check enforces it: it fails if a merged migration is modified, deleted
+  or renamed, or if a new one is misnamed or older than the latest merged one.
+  Check locally with
+  `EVENT_NAME=pull_request BASE_REF=develop .github/scripts/check-migrations.sh`
+  (after committing).
+- Money is `shared.money.Money`, never `double`; amounts are moved only through
+  ledger journal entries — see [docs/ledger.md](docs/ledger.md).
 - Formatting follows [.editorconfig](.editorconfig) (4 spaces, LF line endings).
 - Never commit secrets or `.env` files. Use `.env.example` for documented
   placeholders.

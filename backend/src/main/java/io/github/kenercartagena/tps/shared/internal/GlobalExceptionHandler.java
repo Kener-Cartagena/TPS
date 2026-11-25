@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -95,6 +96,20 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ResponseEntity<Object> handleAuthenticationFailed(AuthenticationFailedException ex,
             WebRequest request) {
         return handleTpsException(ex, HttpStatus.UNAUTHORIZED, request);
+    }
+
+    /**
+     * Two requests changed the same resource at the same time and this one lost the
+     * optimistic lock (JPA {@code @Version}). Nothing was saved; the client can read the
+     * resource again and retry.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ResponseEntity<Object> handleOptimisticLocking(OptimisticLockingFailureException ex,
+            WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The resource was modified by another request. Read it again and retry.");
+        problem.setProperty(CODE, CommonErrorCode.CONCURRENT_MODIFICATION.code());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
     }
 
     // ---- Spring Security ---------------------------------------------------------
