@@ -5,9 +5,10 @@ import java.util.Objects;
 /**
  * Base class of every expected (business) failure in TPS.
  *
- * <p>It cannot be extended directly: modules extend one of its categories —
- * {@link ResourceNotFoundException} or {@link BusinessRuleViolationException} — so
- * every failure maps to a well-defined HTTP status.
+ * <p>It cannot be extended directly: modules use one of its categories —
+ * {@link ResourceNotFoundException} (404), {@link ConflictException} (409),
+ * {@link BusinessRuleViolationException} (422) or {@link AuthenticationFailedException}
+ * (401) — so every failure maps to a well-defined HTTP status.
  *
  * <p><strong>The message is returned to API clients</strong> as the {@code detail} of
  * the error response. It must be clear and must never contain sensitive data
