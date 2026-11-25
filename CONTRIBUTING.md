@@ -19,8 +19,9 @@ reasoning behind it is recorded in
    ```
 4. Push the branch and open a pull request into `develop`. Fill in the PR
    template.
-5. Merge once the **Backend CI** checks are green: *Build and test* and
-   *Build Docker image* (both are required status checks).
+5. Merge once the checks are green. Required: *Build and test* and *Build
+   Docker image* (**Backend CI**). Also review the **Security** workflow
+   (*CodeQL* and *Dependency review*).
 6. When a phase is complete, open a pull request from `develop` into `main`,
    merge it, and tag the release (`vX.Y.Z`).
 
@@ -51,9 +52,15 @@ by hyphens, e.g. `feature/phase-3-accounts-ledger`.
 - Code is organized by business module — see
   [ADR 0001](docs/adr/0001-modular-monolith.md).
 - REST endpoints follow [docs/api-conventions.md](docs/api-conventions.md):
-  modules throw `ResourceNotFoundException` / `BusinessRuleViolationException`
-  with their own `ErrorCode` and never build error responses themselves — see
+  modules throw the exception categories of `shared.error` (not found, conflict,
+  business rule violation, ...) with their own `ErrorCode` and never build error
+  responses themselves — see
   [ADR 0004](docs/adr/0004-api-conventions-and-error-format.md).
+- Every protected operation checks a permission from `identity.Permissions`
+  with `@PreAuthorize`, never a role, and is added to `AuthorizationMatrixTests`
+  — see [docs/security.md](docs/security.md).
+- Code that needs the current time injects `java.time.Clock` instead of calling
+  `Instant.now()`, so it can be tested with a fixed clock.
 - Schema changes are new Flyway migrations; merged migrations are never edited
   — see [ADR 0002](docs/adr/0002-postgresql-and-flyway.md).
 - Formatting follows [.editorconfig](.editorconfig) (4 spaces, LF line endings).
