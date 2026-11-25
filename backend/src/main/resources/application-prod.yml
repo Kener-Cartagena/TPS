@@ -4,6 +4,11 @@
 # SPRING_DATASOURCE_USERNAME and SPRING_DATASOURCE_PASSWORD must be provided by
 # the environment, so a misconfigured deployment fails fast at startup instead
 # of connecting somewhere unexpected.
+#
+# The same applies to security: TPS_SECURITY_JWT_SECRET is required (no default).
+# For the very first start against an empty database, also set
+# TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME and TPS_SECURITY_BOOTSTRAP_ADMIN_PASSWORD
+# to create the first administrator; they are ignored once users exist.
 
 logging:
   # One JSON object per line (Elastic Common Schema), ready for log platforms.

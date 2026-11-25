@@ -12,7 +12,8 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 /**
  * End-to-end checks of the API foundation against a running server (random port) and a
  * real PostgreSQL database: health probes, build info, OpenAPI document and the error
- * format of an unknown endpoint.
+ * format. Every call here is anonymous: these endpoints must stay public, and everything
+ * else must be closed to anonymous callers.
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
@@ -52,19 +53,32 @@ class ApiFoundationIntegrationTests {
                 .jsonPath("$.build.version").isNotEmpty();
     }
 
+    /** Published by Spring Security (RFC 9728); it must describe TPS truthfully. */
     @Test
-    void sensitiveActuatorEndpointsAreNotExposed() {
-        client.get().uri("/actuator/env").exchange().expectStatus().isNotFound();
-        client.get().uri("/actuator/beans").exchange().expectStatus().isNotFound();
+    void protectedResourceMetadataDescribesBearerTokensInTheHeader() {
+        client.get().uri("/.well-known/oauth-protected-resource").exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.resource_name").isEqualTo("TPS API")
+                .jsonPath("$.bearer_methods_supported[0]").isEqualTo("header")
+                .jsonPath("$.tls_client_certificate_bound_access_tokens").isEqualTo(false);
+    }
+
+    /** Not exposed at all, and also closed to anonymous callers (deny by default). */
+    @Test
+    void sensitiveActuatorEndpointsAreNotPublic() {
+        client.get().uri("/actuator/env").exchange().expectStatus().isUnauthorized();
+        client.get().uri("/actuator/beans").exchange().expectStatus().isUnauthorized();
     }
 
     @Test
-    void openApiDocumentIsPublished() {
+    void openApiDocumentIsPublishedWithBearerAuthentication() {
         client.get().uri("/v3/api-docs").exchange()
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.openapi").isNotEmpty()
-                .jsonPath("$.info.title").isEqualTo("TPS API");
+                .jsonPath("$.info.title").isEqualTo("TPS API")
+                .jsonPath("$.components.securitySchemes.bearerAuth.scheme").isEqualTo("bearer");
     }
 
     @Test
@@ -74,14 +88,20 @@ class ApiFoundationIntegrationTests {
                 .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML);
     }
 
+    /**
+     * An anonymous caller cannot tell whether an endpoint exists: unknown URLs also answer
+     * 401, in the standard error format. (Authenticated callers get 404, see the identity
+     * integration tests.)
+     */
     @Test
-    void unknownEndpointReturnsProblemDetailsWithRequestId() {
+    void unknownEndpointRequiresAuthenticationAndReturnsProblemDetails() {
         client.get().uri("/api/v1/does-not-exist").exchange()
-                .expectStatus().isNotFound()
+                .expectStatus().isUnauthorized()
                 .expectHeader().exists("X-Request-Id")
+                .expectHeader().valueEquals("WWW-Authenticate", "Bearer")
                 .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)
                 .expectBody()
-                .jsonPath("$.code").isEqualTo("NOT_FOUND")
+                .jsonPath("$.code").isEqualTo("AUTHENTICATION_REQUIRED")
                 .jsonPath("$.requestId").isNotEmpty()
                 .jsonPath("$.instance").isEqualTo("/api/v1/does-not-exist");
     }

@@ -1,8 +1,11 @@
 package io.github.kenercartagena.tps.shared.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import io.github.kenercartagena.tps.shared.error.AuthenticationFailedException;
 import io.github.kenercartagena.tps.shared.error.BusinessRuleViolationException;
+import io.github.kenercartagena.tps.shared.error.ConflictException;
 import io.github.kenercartagena.tps.shared.error.ErrorCode;
 import io.github.kenercartagena.tps.shared.error.ResourceNotFoundException;
 import jakarta.validation.Valid;
@@ -17,6 +20,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,9 +36,14 @@ import org.springframework.web.bind.annotation.RestController;
  * Verifies that every kind of failure produces a consistent RFC 9457 Problem Details
  * response. Uses a controller that exists only in this test, so no fake endpoint is
  * shipped with the application.
+ *
+ * <p>This slice runs with Spring Boot's default security (the TPS security configuration
+ * is not part of a {@code @WebMvcTest}), so requests run as a mock user and state-changing
+ * requests carry a CSRF token. Security itself is tested in the identity module.
  */
-@WebMvcTest
+@WebMvcTest(controllers = GlobalExceptionHandlerTests.ErrorTestController.class)
 @Import(GlobalExceptionHandlerTests.ErrorTestController.class)
+@WithMockUser
 class GlobalExceptionHandlerTests {
 
     private static final String BASE = "/test/errors";
@@ -42,7 +53,7 @@ class GlobalExceptionHandlerTests {
 
     @Test
     void invalidRequestBodyReturnsFieldViolations() {
-        MvcTestResult result = mvc.post().uri(BASE + "/validation")
+        MvcTestResult result = mvc.post().uri(BASE + "/validation").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": " ", "amount": -5}
@@ -57,7 +68,7 @@ class GlobalExceptionHandlerTests {
 
     @Test
     void validationErrorsNeverEchoTheRejectedValue() {
-        MvcTestResult result = mvc.post().uri(BASE + "/validation")
+        MvcTestResult result = mvc.post().uri(BASE + "/validation").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "ok", "amount": -98765}
@@ -78,7 +89,7 @@ class GlobalExceptionHandlerTests {
 
     @Test
     void malformedJsonReturnsMalformedRequest() {
-        MvcTestResult result = mvc.post().uri(BASE + "/validation")
+        MvcTestResult result = mvc.post().uri(BASE + "/validation").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{ not json")
                 .exchange();
@@ -93,6 +104,37 @@ class GlobalExceptionHandlerTests {
         assertProblem(result, HttpStatus.NOT_FOUND, "SAMPLE_NOT_FOUND");
         assertThat(result).bodyJson().extractingPath("$.detail").isEqualTo("Sample 'abc' was not found.");
         assertThat(result).bodyJson().extractingPath("$.instance").isEqualTo(BASE + "/not-found");
+    }
+
+    @Test
+    void conflictReturns409WithModuleErrorCode() {
+        MvcTestResult result = mvc.get().uri(BASE + "/conflict").exchange();
+
+        assertProblem(result, HttpStatus.CONFLICT, "SAMPLE_CONFLICT");
+    }
+
+    @Test
+    void authenticationFailedReturns401WithModuleErrorCode() {
+        MvcTestResult result = mvc.get().uri(BASE + "/authentication-failed").exchange();
+
+        assertProblem(result, HttpStatus.UNAUTHORIZED, "SAMPLE_BAD_CREDENTIALS");
+    }
+
+    @Test
+    void springSecurityAuthenticationErrorReturns401WithoutInternalDetails() {
+        MvcTestResult result = mvc.get().uri(BASE + "/authentication-required").exchange();
+
+        assertProblem(result, HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED");
+        assertThat(result).bodyText().doesNotContain("secret-token-detail");
+    }
+
+    /** Without a dedicated handler, the catch-all would turn this into a 500. */
+    @Test
+    void accessDeniedReturns403NotInternalError() {
+        MvcTestResult result = mvc.get().uri(BASE + "/access-denied").exchange();
+
+        assertProblem(result, HttpStatus.FORBIDDEN, "ACCESS_DENIED");
+        assertThat(result).bodyText().doesNotContain("secret-rule-detail");
     }
 
     @Test
@@ -113,14 +155,14 @@ class GlobalExceptionHandlerTests {
 
     @Test
     void wrongHttpMethodReturns405() {
-        MvcTestResult result = mvc.delete().uri(BASE + "/not-found").exchange();
+        MvcTestResult result = mvc.delete().uri(BASE + "/not-found").with(csrf()).exchange();
 
         assertProblem(result, HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED");
     }
 
     @Test
     void unsupportedContentTypeReturns415() {
-        MvcTestResult result = mvc.post().uri(BASE + "/validation")
+        MvcTestResult result = mvc.post().uri(BASE + "/validation").with(csrf())
                 .contentType(MediaType.TEXT_PLAIN)
                 .content("hello")
                 .exchange();
@@ -162,7 +204,7 @@ class GlobalExceptionHandlerTests {
     // ---- Test-only fixtures ------------------------------------------------------
 
     enum TestErrorCode implements ErrorCode {
-        SAMPLE_NOT_FOUND, SAMPLE_RULE_BROKEN;
+        SAMPLE_NOT_FOUND, SAMPLE_RULE_BROKEN, SAMPLE_CONFLICT, SAMPLE_BAD_CREDENTIALS;
 
         @Override
         public String code() {
@@ -195,6 +237,27 @@ class GlobalExceptionHandlerTests {
         @GetMapping("/business-rule")
         void businessRule() {
             throw new BusinessRuleViolationException(TestErrorCode.SAMPLE_RULE_BROKEN, "The rule was broken.");
+        }
+
+        @GetMapping("/conflict")
+        void conflict() {
+            throw new ConflictException(TestErrorCode.SAMPLE_CONFLICT, "Sample 'abc' already exists.");
+        }
+
+        @GetMapping("/authentication-failed")
+        void authenticationFailed() {
+            throw new AuthenticationFailedException(TestErrorCode.SAMPLE_BAD_CREDENTIALS,
+                    "Invalid credentials.");
+        }
+
+        @GetMapping("/authentication-required")
+        void authenticationRequired() {
+            throw new InsufficientAuthenticationException("secret-token-detail");
+        }
+
+        @GetMapping("/access-denied")
+        void accessDenied() {
+            throw new AccessDeniedException("secret-rule-detail");
         }
 
         @GetMapping("/unexpected")

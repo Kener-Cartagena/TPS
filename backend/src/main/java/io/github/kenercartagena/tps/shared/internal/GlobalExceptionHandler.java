@@ -1,7 +1,9 @@
 package io.github.kenercartagena.tps.shared.internal;
 
+import io.github.kenercartagena.tps.shared.error.AuthenticationFailedException;
 import io.github.kenercartagena.tps.shared.error.BusinessRuleViolationException;
 import io.github.kenercartagena.tps.shared.error.CommonErrorCode;
+import io.github.kenercartagena.tps.shared.error.ConflictException;
 import io.github.kenercartagena.tps.shared.error.ErrorCode;
 import io.github.kenercartagena.tps.shared.error.ResourceNotFoundException;
 import io.github.kenercartagena.tps.shared.error.TpsException;
@@ -23,6 +25,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -54,6 +58,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  *
  * <p>Unexpected exceptions return a generic {@code 500} without internal details;
  * the full stack trace is logged together with the request id.
+ *
+ * <p>Spring Security failures ({@code 401}/{@code 403}) also end here: the security
+ * filter chain delegates them to this handler, so there is a single source of error
+ * responses for the whole API (ADR 0004).
  */
 @RestControllerAdvice
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -72,10 +80,51 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleTpsException(ex, HttpStatus.NOT_FOUND, request);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    ResponseEntity<Object> handleConflict(ConflictException ex, WebRequest request) {
+        return handleTpsException(ex, HttpStatus.CONFLICT, request);
+    }
+
     @ExceptionHandler(BusinessRuleViolationException.class)
     ResponseEntity<Object> handleBusinessRuleViolation(BusinessRuleViolationException ex,
             WebRequest request) {
         return handleTpsException(ex, HttpStatus.UNPROCESSABLE_CONTENT, request);
+    }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    ResponseEntity<Object> handleAuthenticationFailed(AuthenticationFailedException ex,
+            WebRequest request) {
+        return handleTpsException(ex, HttpStatus.UNAUTHORIZED, request);
+    }
+
+    // ---- Spring Security ---------------------------------------------------------
+
+    /**
+     * Missing, malformed, expired or tampered credentials. The exception message is not
+     * returned: it can describe the token in detail. The {@code WWW-Authenticate}
+     * header is set by the security entry point before delegating here.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<Object> handleAuthentication(AuthenticationException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+                "Authentication is required. Provide a valid bearer token.");
+        problem.setProperty(CODE, CommonErrorCode.AUTHENTICATION_REQUIRED.code());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.UNAUTHORIZED,
+                request);
+    }
+
+    /**
+     * The caller is authenticated but not allowed to perform the operation. Raised by
+     * {@code @PreAuthorize} inside a controller or by the security filter chain.
+     * Without this handler the catch-all below would turn it into a {@code 500}.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+                "You do not have permission to perform this operation.");
+        problem.setProperty(CODE, CommonErrorCode.ACCESS_DENIED.code());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.FORBIDDEN,
+                request);
     }
 
     // ---- Anything else: a bug or an infrastructure failure -----------------------
@@ -185,9 +234,12 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static ErrorCode defaultCode(HttpStatusCode status) {
         return switch (status.value()) {
             case 400 -> CommonErrorCode.BAD_REQUEST;
+            case 401 -> CommonErrorCode.AUTHENTICATION_REQUIRED;
+            case 403 -> CommonErrorCode.ACCESS_DENIED;
             case 404 -> CommonErrorCode.NOT_FOUND;
             case 405 -> CommonErrorCode.METHOD_NOT_ALLOWED;
             case 406 -> CommonErrorCode.NOT_ACCEPTABLE;
+            case 409 -> CommonErrorCode.CONFLICT;
             case 415 -> CommonErrorCode.UNSUPPORTED_MEDIA_TYPE;
             case 500 -> CommonErrorCode.INTERNAL_ERROR;
             default -> CommonErrorCode.REQUEST_FAILED;
