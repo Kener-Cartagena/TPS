@@ -36,6 +36,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tps}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tps}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-tps_local_password}
+      # Security (ADR 0005). The defaults are the throwaway LOCAL values of
+      # application-dev.yml, so `docker compose --profile app up` works with zero
+      # setup. A real deployment must set its own secret and admin password.
+      TPS_SECURITY_JWT_SECRET: ${TPS_SECURITY_JWT_SECRET:-RAP/a0KHL10XXuMCpI2NJGvurrdPGLuXr75mUWH84iE=}
+      TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME: ${TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      TPS_SECURITY_BOOTSTRAP_ADMIN_PASSWORD: ${TPS_SECURITY_BOOTSTRAP_ADMIN_PASSWORD:-admin-local-password}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:
