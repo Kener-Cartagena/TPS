@@ -4,7 +4,8 @@
  * <ul>
  *   <li>{@code identity} (public) — {@link io.github.kenercartagena.tps.identity.Permissions},
  *       the permission names other modules use to protect their operations with
- *       {@code @PreAuthorize}.</li>
+ *       {@code @PreAuthorize}, and {@link io.github.kenercartagena.tps.identity.CurrentUser},
+ *       the id of the authenticated caller (to record who did what).</li>
  *   <li>{@code identity.domain} (internal) — the {@code User} aggregate, roles and their
  *       permissions, persistence.</li>
  *   <li>{@code identity.application} (internal) — user management use cases.</li>

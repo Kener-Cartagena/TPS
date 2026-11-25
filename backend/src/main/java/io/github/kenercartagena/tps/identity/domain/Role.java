@@ -19,10 +19,10 @@ public enum Role {
     SYSTEM_ADMIN(Set.of(Permissions.USER_READ, Permissions.USER_MANAGE)),
 
     /** Executes day-to-day financial operations. */
-    OPERATOR(Set.of()),
+    OPERATOR(Set.of(Permissions.ACCOUNT_READ, Permissions.ACCOUNT_MANAGE)),
 
     /** Read-only access for audit and compliance, including who has access. */
-    AUDITOR(Set.of(Permissions.USER_READ));
+    AUDITOR(Set.of(Permissions.USER_READ, Permissions.ACCOUNT_READ, Permissions.LEDGER_READ));
 
     private final Set<String> permissions;
 
