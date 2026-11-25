@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -137,6 +138,15 @@ class GlobalExceptionHandlerTests {
         assertThat(result).bodyText().doesNotContain("secret-rule-detail");
     }
 
+    /** A lost optimistic lock (JPA @Version) is a conflict the client can retry, not a 500. */
+    @Test
+    void concurrentModificationReturns409WithoutInternalDetails() {
+        MvcTestResult result = mvc.get().uri(BASE + "/concurrent-modification").exchange();
+
+        assertProblem(result, HttpStatus.CONFLICT, "CONCURRENT_MODIFICATION");
+        assertThat(result).bodyText().doesNotContain("secret-entity-detail");
+    }
+
     @Test
     void businessRuleViolationReturns422() {
         MvcTestResult result = mvc.get().uri(BASE + "/business-rule").exchange();
@@ -242,6 +252,11 @@ class GlobalExceptionHandlerTests {
         @GetMapping("/conflict")
         void conflict() {
             throw new ConflictException(TestErrorCode.SAMPLE_CONFLICT, "Sample 'abc' already exists.");
+        }
+
+        @GetMapping("/concurrent-modification")
+        void concurrentModification() {
+            throw new OptimisticLockingFailureException("secret-entity-detail");
         }
 
         @GetMapping("/authentication-failed")
