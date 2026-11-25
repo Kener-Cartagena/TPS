@@ -20,6 +20,14 @@ A breaking change to the contract (removing a field, changing its meaning or
 type) requires a new version (`/api/v2`). Adding optional fields is not a
 breaking change.
 
+## Authentication
+
+Every endpoint requires `Authorization: Bearer <access token>` unless it is
+explicitly public (login, health, API documentation). Tokens are obtained with
+`POST /api/v1/auth/tokens`. Operations are authorized by permission. The
+security model, the permission matrix and the configuration are in
+[security.md](security.md).
+
 ## HTTP methods and status codes
 
 | Method | Use | Success status |
@@ -33,10 +41,11 @@ breaking change.
 | Error status | When | `code` |
 |---|---|---|
 | `400 Bad Request` | Validation failed or the body is malformed | `VALIDATION_FAILED`, `MALFORMED_REQUEST` |
-| `401 Unauthorized` / `403 Forbidden` | Authentication / authorization (Phase 2) | — |
-| `404 Not Found` | Unknown endpoint or resource | `NOT_FOUND` or a module code, e.g. `ACCOUNT_NOT_FOUND` |
+| `401 Unauthorized` | Missing or invalid token, or failed login | `AUTHENTICATION_REQUIRED`, `INVALID_CREDENTIALS` |
+| `403 Forbidden` | Valid token, missing permission | `ACCESS_DENIED` |
+| `404 Not Found` | Unknown endpoint or resource (authenticated callers) | `NOT_FOUND` or a module code, e.g. `USER_NOT_FOUND` |
 | `405`, `406`, `415` | Wrong method, `Accept` or `Content-Type` | `METHOD_NOT_ALLOWED`, `NOT_ACCEPTABLE`, `UNSUPPORTED_MEDIA_TYPE` |
-| `409 Conflict` | Concurrent modification or duplicate request (Phase 4) | module code |
+| `409 Conflict` | Conflicts with the current state: duplicate, concurrent modification | module code, e.g. `USERNAME_ALREADY_EXISTS` |
 | `422 Unprocessable Content` | Valid request that breaks a business rule | module code, e.g. `INSUFFICIENT_FUNDS` |
 | `500 Internal Server Error` | Unexpected failure | `INTERNAL_ERROR` |
 
@@ -48,10 +57,32 @@ breaking change.
   ```json
   { "accountId": "...", "status": "ACTIVE", "currency": "HNL" }
   ```
-- Lists that can grow are paginated. The page format is defined in Phase 3,
-  together with the first list endpoint.
+- Lists that can grow are paginated (see [Pagination](#pagination)).
 - Enumerations are strings in `UPPER_SNAKE_CASE` (`"COMPLETED"`).
 - Optional values that are absent are omitted or `null`, never empty strings.
+
+## Pagination
+
+List endpoints accept two query parameters:
+
+| Parameter | Meaning | Default | Allowed |
+|---|---|---|---|
+| `page` | Zero-based page number | `0` | `>= 0` |
+| `size` | Items per page | `20` | `1` to `100` |
+
+The sort order is fixed by each endpoint and documented in its OpenAPI
+description (e.g. users are sorted by username). Clients cannot sort by
+arbitrary fields, which would let them probe the ordering of values they cannot
+read.
+
+The response is Spring Data's stable page format:
+
+```json
+{
+  "content": [ { "id": "..." } ],
+  "page": { "size": 20, "number": 0, "totalElements": 42, "totalPages": 3 }
+}
+```
 
 ## Data types
 
@@ -107,6 +138,14 @@ Rules:
 Modules do not build error responses. They throw one of the exception
 categories from `shared.error`, with a module-specific `ErrorCode`:
 
+| Exception | Status |
+|---|---|
+| `ResourceNotFoundException` | `404` |
+| `ConflictException` | `409` |
+| `BusinessRuleViolationException` | `422` |
+| `AuthenticationFailedException` | `401` |
+
+
 ```java
 enum AccountErrorCode implements ErrorCode {
     ACCOUNT_NOT_FOUND, ACCOUNT_SUSPENDED;
@@ -139,4 +178,6 @@ The OpenAPI 3 document is generated from the code:
 - Swagger UI: `/swagger-ui.html`
 - OpenAPI JSON: `/v3/api-docs`
 
-Only paths under `/api/**` are documented.
+Only paths under `/api/**` are documented. The documentation is public; to try
+protected operations in Swagger UI, log in and paste the token with
+**Authorize**.

@@ -1,15 +1,16 @@
 # Transaction Processing System (TPS)
 
 [![Backend CI](https://github.com/Kener-Cartagena/TPS/actions/workflows/backend-ci.yml/badge.svg?branch=develop)](https://github.com/Kener-Cartagena/TPS/actions/workflows/backend-ci.yml)
+[![Security](https://github.com/Kener-Cartagena/TPS/actions/workflows/security.yml/badge.svg?branch=develop)](https://github.com/Kener-Cartagena/TPS/actions/workflows/security.yml)
 
 A backend platform for processing financial transactions — accounts, a
 double-entry ledger, internal transfers, payments through simulated providers,
 reversals, and reconciliation — built with **Java 25** and **Spring Boot 4**.
 
-> **Status: Phase 1 — core backend and API foundation.** Module structure,
-> API conventions, standardized error responses, health probes, OpenAPI
-> documentation and the CI pipeline are in place. No business functionality is
-> implemented yet. See the [roadmap](#roadmap).
+> **Status: Phase 2 — identity, security and access control.** Users, JWT
+> authentication, permission-based authorization, account lockout and security
+> scanning in CI are in place, on top of the API foundation of Phase 1. No
+> financial functionality is implemented yet. See the [roadmap](#roadmap).
 >
 > TPS is a portfolio project. It uses simulated financial providers and is not
 > certified or intended to process real customer funds.
@@ -20,12 +21,13 @@ reversals, and reconciliation — built with **Java 25** and **Spring Boot 4**.
 |---|---|
 | Language | Java 25 |
 | Framework | Spring Boot 4 (Spring Web MVC, Spring Data JPA, Bean Validation, Actuator) |
+| Security | Spring Security 7: stateless JWT (OAuth 2.0 resource server), method security, bcrypt |
 | Architecture | Spring Modulith (module boundaries verified in tests) |
 | API docs | OpenAPI 3 with springdoc-openapi (Swagger UI) |
 | Database | PostgreSQL 18, Flyway migrations |
-| Testing | JUnit 5, Spring Boot Test, Testcontainers, JaCoCo (coverage) |
+| Testing | JUnit 5, Spring Boot Test, Spring Security Test, Testcontainers, JaCoCo (coverage) |
 | Build | Maven (wrapper included) |
-| Infrastructure | Docker, Docker Compose, GitHub Actions |
+| Infrastructure | Docker, Docker Compose, GitHub Actions, CodeQL, Dependabot |
 
 ## Architecture
 
@@ -36,9 +38,10 @@ fails the build if a module uses another module's internals.
 
 | Module | Responsibility |
 |---|---|
-| `shared` | Cross-cutting building blocks: error categories and codes, API base paths, global error handling, request id logging, OpenAPI metadata |
+| `shared` | Cross-cutting building blocks: error categories and codes, API base paths, global error handling, request id logging, clock, OpenAPI metadata |
+| `identity` | Users, login (JWT), roles and permissions, account lockout — see [docs/security.md](docs/security.md) |
 
-Business modules (identity, accounts, ledger, ...) are added phase by phase.
+Business modules (accounts, ledger, transactions, ...) are added phase by phase.
 Architectural decisions are documented as ADRs in [docs/adr](docs/adr/README.md),
 and the REST rules in [docs/api-conventions.md](docs/api-conventions.md).
 
@@ -55,6 +58,7 @@ and the REST rules in [docs/api-conventions.md](docs/api-conventions.md).
 ├── docs/
 │   ├── PLAN.md           Development plan and phases
 │   ├── api-conventions.md  REST API and error format rules
+│   ├── security.md       Security model: roles, permissions, authentication
 │   └── adr/              Architecture Decision Records
 ├── .github/
 │   ├── workflows/        CI pipelines (GitHub Actions)
@@ -86,8 +90,9 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-On startup the application connects to PostgreSQL and applies all Flyway
-migrations. Then open:
+On startup the application connects to PostgreSQL, applies all Flyway
+migrations and, on an empty database, creates the local administrator
+**`admin` / `admin-local-password`** (throwaway local credentials). Then open:
 
 | URL | What |
 |---|---|
@@ -95,6 +100,20 @@ migrations. Then open:
 | <http://localhost:8080/v3/api-docs> | OpenAPI 3 document (JSON) |
 | <http://localhost:8080/actuator/health> | Health (`/liveness` and `/readiness` probes below it) |
 | <http://localhost:8080/actuator/info> | Application name, version and Java runtime |
+
+Every API call except login needs a token:
+
+```bash
+# Log in and copy "accessToken" from the response
+curl -X POST http://localhost:8080/api/v1/auth/tokens   -H "Content-Type: application/json"   -d '{"username": "admin", "password": "admin-local-password"}'
+
+# Call the API with it
+curl http://localhost:8080/api/v1/users/me -H "Authorization: Bearer <accessToken>"
+```
+
+In Swagger UI, log in with `POST /api/v1/auth/tokens`, click **Authorize** and
+paste the token. Roles, permissions and all endpoints:
+[docs/security.md](docs/security.md).
 
 ### Run everything in containers
 
@@ -124,9 +143,16 @@ running. No local database is required.
 | `dev` (default) | Local development | Local Docker PostgreSQL (defaults in `application-dev.yml`) | Plain text, with request id |
 | `prod` | Docker image, deployments | Required environment variables, no defaults | JSON (Elastic Common Schema) |
 
-Database environment variables (Spring Boot standard):
-`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
-`SPRING_DATASOURCE_PASSWORD`.
+Environment variables for deployments (`prod` profile):
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Yes | Database connection (Spring Boot standard) |
+| `TPS_SECURITY_JWT_SECRET` | Yes | Token signing key, Base64, at least 32 bytes (`openssl rand -base64 32`) |
+| `TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME`, `TPS_SECURITY_BOOTSTRAP_ADMIN_PASSWORD` | First start only | Creates the first administrator when the database has no users |
+
+The application refuses to start if a required value is missing. All security
+settings: [docs/security.md](docs/security.md#configuration).
 
 ## API conventions
 
@@ -148,7 +174,9 @@ with a stable `code` and the request id:
 ```
 
 Every response carries an `X-Request-Id` header that also appears in the logs.
-Full rules: [docs/api-conventions.md](docs/api-conventions.md).
+Requests are authenticated with `Authorization: Bearer <token>`; lists are
+paginated (`?page=0&size=20`). Full rules:
+[docs/api-conventions.md](docs/api-conventions.md).
 
 ## Continuous integration
 
@@ -160,6 +188,14 @@ Every push and pull request to `main` or `develop` runs
 | **Build and test** | Compiles with Java 25, runs the full test suite (including database tests against PostgreSQL and module boundary checks), publishes a *Test results* check and uploads test and coverage (JaCoCo) reports as artifacts |
 | **Build Docker image** | Builds the production image from `backend/Dockerfile` (not published) |
 
+[Security](.github/workflows/security.yml) runs on every push and pull request
+to `main` or `develop`, and every Monday:
+
+| Job | What it checks |
+|---|---|
+| **CodeQL** (`java-kotlin`, `actions`) | Static security analysis of the Java code and of the workflow files; findings appear in the *Security* tab |
+| **Dependency review** | Pull requests only: fails if the PR adds a dependency with a known vulnerability (moderate or worse) |
+
 Pull requests cannot be merged unless CI passes.
 [Dependabot](.github/dependabot.yml) opens weekly pull requests to update Maven
 dependencies, GitHub Actions and Docker base images.
@@ -170,7 +206,7 @@ dependencies, GitHub Actions and Docker base images.
 |---|---|---|
 | 0 | Project foundation and architecture | ✅ Done |
 | 1 | Core backend and API foundation | ✅ Done |
-| 2 | Identity, security and access control | Planned |
+| 2 | Identity, security and access control | ✅ Done |
 | 3 | Accounts and financial ledger | Planned |
 | 4 | Transaction processing engine | Planned |
 | 5 | Internal transfers and reversals | Planned |

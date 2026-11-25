@@ -1,0 +1,97 @@
+# =============================================================================
+# Security — automated security checks for the whole repository.
+#
+# Two independent jobs, both free for public repositories:
+#
+#   codeql             -> GitHub CodeQL "code scanning": analyzes the source code
+#                         for vulnerabilities (injection, unsafe deserialization,
+#                         leaked secrets in code, ...). It runs once per language
+#                         thanks to a MATRIX: Java and the GitHub Actions workflows
+#                         themselves. Findings appear in the repository's
+#                         "Security" tab -> "Code scanning".
+#   dependency-review  -> only on pull requests: compares the dependencies of the
+#                         PR with the base branch and FAILS if the PR adds a
+#                         dependency with a known vulnerability (moderate or worse).
+#
+# New concepts compared to backend-ci.yml:
+#   - `schedule` (cron): the workflow also runs every week on its own, because
+#     new vulnerabilities are published for code that has not changed.
+#   - `strategy.matrix`: one job definition, several parallel runs.
+#   - `security-events: write`: the permission to upload results to the
+#     Security tab.
+# =============================================================================
+
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Every Monday at 06:00 UTC. Format: minute hour day-of-month month day-of-week.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+# Least privilege by default; jobs ask for more only if they need it.
+permissions:
+  contents: read
+
+# Same rule as Backend CI: PR runs are grouped by PR number and the old run is
+# cancelled on a new push; runs on main/develop are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  codeql:
+    # With a matrix, GitHub shows one check per entry, e.g. "CodeQL (java-kotlin)".
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      security-events: write   # upload the results to the Security tab
+
+    strategy:
+      # Keep analyzing the other language even if one entry fails.
+      fail-fast: false
+      matrix:
+        # java-kotlin: the backend. actions: the workflow files in .github/workflows.
+        language: [java-kotlin, actions]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      # build-mode none: CodeQL reads the Java source directly, without compiling it.
+      # Faster, and it does not depend on the Java version or the Maven build.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          # The default queries plus additional security checks.
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+
+  dependency-review:
+    name: Dependency review
+    # Only meaningful for a pull request: there must be a "before" and an "after".
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: moderate

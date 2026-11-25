@@ -4,6 +4,7 @@
 # development, the database connection is supplied through Spring Boot's
 # standard environment variables (relaxed binding), never hard-coded:
 #   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+# and the JWT signing key through TPS_SECURITY_JWT_SECRET (see "Security" below).
 
 spring:
   application:
@@ -61,14 +62,32 @@ management:
 springdoc:
   # Document only the public REST API, not actuator or framework endpoints.
   paths-to-match: /api/**
-  # Enabled in every profile on purpose (public portfolio demo, ADR 0004).
-  # Whether it stays public once authentication exists is decided in Phase 2.
+  # Public in every profile on purpose (portfolio demo, ADR 0004 and ADR 0005):
+  # the documentation contains no data, and every operation still needs a token.
   api-docs:
     enabled: true
     path: /v3/api-docs
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+
+# ---- Security (identity module, ADR 0005) -------------------------------------
+tps:
+  security:
+    jwt:
+      # Required, no default: Base64 key of at least 256 bits, from TPS_SECURITY_JWT_SECRET.
+      # The application refuses to start without it. Generate: openssl rand -base64 32
+      issuer: tps
+      # Access token lifetime. Short on purpose: a token stays valid until it expires,
+      # even if the user is disabled meanwhile (there are no refresh tokens yet).
+      expiration: 30m
+    login:
+      # Consecutive failed logins that lock the account, and for how long.
+      max-attempts: 5
+      lockout: 15m
+    # First administrator, created only if the database has no users. In production
+    # set TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME / _PASSWORD for the first start only.
+    # bootstrap.admin: { username, password, full-name }
 
 # ---- Logging -----------------------------------------------------------------
 logging:
