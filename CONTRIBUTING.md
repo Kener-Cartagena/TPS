@@ -22,8 +22,14 @@ reasoning behind it is recorded in
 5. Merge once the checks are green. Required: *Build and test*, *Build
    Docker image* and *Migration guard* (**Backend CI**). Also review the
    **Security** workflow (*CodeQL* and *Dependency review*).
-6. When a phase is complete, open a pull request from `develop` into `main`,
-   merge it, and tag the release (`vX.Y.Z`).
+6. When a phase is complete, release it:
+   1. On a `release/vX.Y.Z` branch from `develop`, set the version in
+      `backend/pom.xml` to `X.Y.Z` (without `-SNAPSHOT`) and merge it into
+      `develop` through a pull request.
+   2. Open a pull request from `develop` into `main` and merge it.
+   3. Tag the merge commit on `main` (`vX.Y.Z`).
+   4. The next phase starts by bumping `develop` to the next
+      `-SNAPSHOT` version (e.g. `0.5.0-SNAPSHOT`).
 
 ## Branch names
 
