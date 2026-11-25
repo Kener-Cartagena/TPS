@@ -1,5 +1,6 @@
 package io.github.kenercartagena.tps.identity.web;
 
+import io.github.kenercartagena.tps.identity.CurrentUser;
 import io.github.kenercartagena.tps.identity.Permissions;
 import io.github.kenercartagena.tps.identity.application.UserService;
 import io.github.kenercartagena.tps.identity.application.UserView;
