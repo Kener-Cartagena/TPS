@@ -2,13 +2,16 @@
 # Backend CI — Continuous Integration for the Spring Boot backend.
 #
 # What it does: on every push / pull request to main or develop, GitHub starts
-# fresh Linux virtual machines ("runners") and runs two independent jobs IN
+# fresh Linux virtual machines ("runners") and runs three independent jobs IN
 # PARALLEL:
 #
-#   build   -> compile + all tests (`./mvnw verify`, including Testcontainers
-#              tests with a real PostgreSQL), test report and coverage report.
-#   docker  -> builds the production Docker image (without publishing it), so a
-#              broken Dockerfile is caught in the PR, not on deployment day.
+#   build       -> compile + all tests (`./mvnw verify`, including Testcontainers
+#                  tests with a real PostgreSQL), test report, coverage report and
+#                  a summary of both on the run page.
+#   docker      -> builds the production Docker image (without publishing it), so a
+#                  broken Dockerfile is caught in the PR, not on deployment day.
+#   migrations  -> fails if a Flyway migration that was already merged is changed,
+#                  or a new one is misnamed or out of order.
 #
 # If any job fails, the run is marked ❌ and — with branch protection enabled —
 # the pull request cannot be merged.
@@ -101,7 +104,14 @@ jobs:
           reporter: java-junit
           fail-on-empty: false
 
-      # 5. Keep the raw test reports (surefire) and the coverage report (JaCoCo)
+      # 5. Write a Markdown summary (tests + coverage per module) to the special file
+      #    $GITHUB_STEP_SUMMARY: GitHub shows it at the top of the run's page, so
+      #    the numbers are visible without downloading the reports.
+      - name: Write test and coverage summary
+        if: ${{ !cancelled() }}
+        run: bash ../.github/scripts/backend-summary.sh >> "$GITHUB_STEP_SUMMARY"
+
+      # 6. Keep the raw test reports (surefire) and the coverage report (JaCoCo)
       #    as downloadable "Artifacts" of the run (bottom of the run summary page).
       #    Open jacoco/index.html after downloading to browse coverage per class.
       - name: Upload test and coverage reports
@@ -144,3 +154,29 @@ jobs:
           tags: tps-backend:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
+
+  migrations:
+    # Candidate for a required status check: it protects every database that already
+    # ran the merged migrations (see CONTRIBUTING.md).
+    name: Migration guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # fetch-depth: 0 downloads the whole history, not only the last commit (the
+      # default), so the script can compare with the target branch or the previous
+      # commit.
+      - name: Check out code with full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Event data is passed through environment variables, never written into the
+      # script with ${{ }}: a branch name is user input, and pasting it into a shell
+      # command would allow script injection.
+      - name: Check Flyway migrations
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bash .github/scripts/check-migrations.sh
