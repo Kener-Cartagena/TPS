@@ -17,11 +17,17 @@ reasoning behind it is recorded in
    ```bash
    cd backend && ./mvnw verify
    ```
+   If you changed the REST API on purpose (an endpoint, a field, an error code),
+   update its reviewed snapshot and commit it with the change:
+   ```bash
+   UPDATE=true bash .github/scripts/check-api-contract.sh   # from the repository root
+   ```
+   Without the flag, the script only compares, like the *API contract* CI job.
 4. Push the branch and open a pull request into `develop`. Fill in the PR
    template.
 5. Merge once the checks are green. Required: *Build and test*, *Build
-   Docker image* and *Migration guard* (**Backend CI**). Also review the
-   **Security** workflow (*CodeQL* and *Dependency review*).
+   Docker image*, *Migration guard* and *API contract* (**Backend CI**). Also
+   review the **Security** workflow (*CodeQL* and *Dependency review*).
 6. When a phase is complete, release it:
    1. On a `release/vX.Y.Z` branch from `develop`, set the version in
       `backend/pom.xml` to `X.Y.Z` (without `-SNAPSHOT`) and merge it into

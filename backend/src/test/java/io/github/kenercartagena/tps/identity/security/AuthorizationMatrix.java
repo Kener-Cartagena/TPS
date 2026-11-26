@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import io.github.kenercartagena.tps.identity.domain.Role;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
@@ -43,7 +44,14 @@ public final class AuthorizationMatrix {
     /** Calls the endpoint as the caller and checks the status (and error code if denied). */
     public static void assertCall(MockMvcTester mvc, HttpMethod method, String path,
             @Nullable String body, String caller, int expectedStatus) {
+        assertCall(mvc, method, path, body, Map.of(), caller, expectedStatus);
+    }
+
+    /** The same, sending these request headers too (e.g. {@code Idempotency-Key}). */
+    public static void assertCall(MockMvcTester mvc, HttpMethod method, String path,
+            @Nullable String body, Map<String, String> headers, String caller, int expectedStatus) {
         MockMvcRequestBuilder request = mvc.method(method).uri(path);
+        headers.forEach(request::header);
         if (body != null) {
             request.contentType(MediaType.APPLICATION_JSON).content(body);
         }

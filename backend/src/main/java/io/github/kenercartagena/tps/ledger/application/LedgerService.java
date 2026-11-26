@@ -19,8 +19,11 @@ import io.github.kenercartagena.tps.shared.error.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.time.Clock;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -30,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -78,11 +82,22 @@ class LedgerService implements Ledger {
 
     @Override
     public PostedJournalEntry post(JournalEntryRequest request) {
-        Map<UUID, LedgerAccount> locked = lockAccountsOf(request);
+        Map<UUID, LedgerAccount> locked = lockInOrder(
+                request.lines().stream().map(JournalLine::ledgerAccountId).toList());
         JournalEntry entry = JournalEntry.post(request, locked, clock.instant());
         journalEntries.save(entry);
         log.debug("Journal entry {} posted with {} lines", entry.getId(), entry.getPostings().size());
         return new PostedJournalEntry(entry.getId(), entry.getPostedAt());
+    }
+
+    /** {@code MANDATORY}: fails at once if there is no transaction to hold the locks. */
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Map<UUID, LedgerBalance> lockForPosting(Set<UUID> ledgerAccountIds) {
+        Map<UUID, LedgerBalance> balances = new LinkedHashMap<>();
+        lockInOrder(ledgerAccountIds).forEach((id, account) ->
+                balances.put(id, new LedgerBalance(id, account.getBalance())));
+        return balances;
     }
 
     @Override
@@ -115,14 +130,13 @@ class LedgerService implements Ledger {
     // ---- Locking -------------------------------------------------------------------
 
     /**
-     * Locks every account of the entry, in ascending id order. Two entries that touch the
-     * same accounts always lock them in the same order, so they wait for each other
-     * instead of deadlocking.
+     * Locks the accounts in ascending id order. Two entries that touch the same accounts
+     * always lock them in the same order, so they wait for each other instead of
+     * deadlocking.
      */
-    private Map<UUID, LedgerAccount> lockAccountsOf(JournalEntryRequest request) {
+    private Map<UUID, LedgerAccount> lockInOrder(Collection<UUID> ledgerAccountIds) {
         Map<UUID, LedgerAccount> locked = new HashMap<>();
-        request.lines().stream()
-                .map(JournalLine::ledgerAccountId)
+        ledgerAccountIds.stream()
                 .distinct()
                 .sorted()
                 .forEach(id -> locked.put(id, lock(id)));

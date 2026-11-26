@@ -4,7 +4,7 @@ import io.github.kenercartagena.tps.accounts.domain.Account;
 import io.github.kenercartagena.tps.accounts.domain.AccountHolderRepository;
 import io.github.kenercartagena.tps.accounts.domain.AccountNumber;
 import io.github.kenercartagena.tps.accounts.domain.AccountRepository;
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.accounts.domain.AccountStatusChange;
 import io.github.kenercartagena.tps.accounts.domain.AccountStatusChangeRepository;
 import io.github.kenercartagena.tps.accounts.domain.AccountsErrorCode;
@@ -123,7 +123,7 @@ public class AccountService {
         Instant asOf = clock.instant();
         LedgerBalance balance = ledger.balanceOf(account.getLedgerAccountId());
         String amount = balance.balance().toPlainString();
-        // No holds exist yet (Phases 4 and 6), so all of the balance is available.
+        // No holds exist yet (Phase 6), so all of the balance is available.
         return new AccountBalanceView(account.getId(), account.getAccountNumber().value(),
                 account.getCurrency(), amount, amount, asOf);
     }
@@ -152,7 +152,7 @@ public class AccountService {
         return accounts.findById(accountId).orElseThrow(() -> notFound(accountId));
     }
 
-    private static ResourceNotFoundException notFound(UUID accountId) {
+    static ResourceNotFoundException notFound(UUID accountId) {
         return new ResourceNotFoundException(AccountsErrorCode.ACCOUNT_NOT_FOUND,
                 "Account '%s' was not found.".formatted(accountId));
     }

@@ -1,5 +1,6 @@
 package io.github.kenercartagena.tps.accounts.domain;
 
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.shared.error.BusinessRuleViolationException;
 import io.github.kenercartagena.tps.shared.money.Currency;
 import jakarta.persistence.Column;

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -54,7 +55,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  *   <li>{@code code} — stable, machine-readable error code ({@link ErrorCode}),</li>
  *   <li>{@code requestId} — correlates the response with the server logs,</li>
  *   <li>{@code timestamp} — when the error occurred (UTC),</li>
- *   <li>{@code errors} — field violations, only for validation failures.</li>
+ *   <li>{@code errors} — field violations, only for validation failures,</li>
+ *   <li>the extra properties of a {@link TpsException}, e.g. {@code transactionId}.</li>
  * </ul>
  *
  * <p>Unexpected exceptions return a generic {@code 500} without internal details;
@@ -108,6 +110,21 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "The resource was modified by another request. Read it again and retry.");
+        problem.setProperty(CODE, CommonErrorCode.CONCURRENT_MODIFICATION.code());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+    }
+
+    /**
+     * The request waited too long for a row another request had locked (the database
+     * {@code lock_timeout}), or the database broke a deadlock by aborting it. Nothing was
+     * saved: the whole database transaction was rolled back, so the client can retry.
+     */
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    ResponseEntity<Object> handlePessimisticLocking(PessimisticLockingFailureException ex,
+            WebRequest request) {
+        log.warn("Request gave up waiting for a database lock: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The resource is being changed by another request. Nothing was saved; retry in a moment.");
         problem.setProperty(CODE, CommonErrorCode.CONCURRENT_MODIFICATION.code());
         return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
     }
@@ -219,6 +236,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<Object> handleTpsException(TpsException ex, HttpStatus status,
             WebRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        ex.getProperties().forEach(problem::setProperty);
         problem.setProperty(CODE, ex.getErrorCode().code());
         return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }

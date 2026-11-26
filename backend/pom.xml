@@ -12,7 +12,7 @@
 
     <groupId>io.github.kenercartagena</groupId>
     <artifactId>tps</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
     <name>tps</name>
     <description>Transaction Processing System — financial transaction processing backend</description>
     <url>https://github.com/Kener-Cartagena/TPS</url>

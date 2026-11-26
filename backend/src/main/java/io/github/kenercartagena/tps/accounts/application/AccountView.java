@@ -1,7 +1,7 @@
 package io.github.kenercartagena.tps.accounts.application;
 
 import io.github.kenercartagena.tps.accounts.domain.Account;
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.accounts.domain.AccountType;
 import io.github.kenercartagena.tps.shared.money.Currency;
 import java.time.Instant;

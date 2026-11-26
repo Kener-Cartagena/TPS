@@ -1,5 +1,6 @@
 package io.github.kenercartagena.tps.accounts.domain;
 
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
