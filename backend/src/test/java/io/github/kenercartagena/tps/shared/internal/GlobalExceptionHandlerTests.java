@@ -1,6 +1,7 @@
 package io.github.kenercartagena.tps.shared.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import io.github.kenercartagena.tps.shared.error.AuthenticationFailedException;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -147,11 +149,39 @@ class GlobalExceptionHandlerTests {
         assertThat(result).bodyText().doesNotContain("secret-entity-detail");
     }
 
+    /** A lock wait that timed out (or a deadlock) rolled everything back: retry, not a 500. */
+    @Test
+    void lockTimeoutReturns409WithoutInternalDetails() {
+        MvcTestResult result = mvc.get().uri(BASE + "/lock-timeout").exchange();
+
+        assertProblem(result, HttpStatus.CONFLICT, "CONCURRENT_MODIFICATION");
+        assertThat(result).bodyText().doesNotContain("secret-lock-detail");
+    }
+
     @Test
     void businessRuleViolationReturns422() {
         MvcTestResult result = mvc.get().uri(BASE + "/business-rule").exchange();
 
         assertProblem(result, HttpStatus.UNPROCESSABLE_CONTENT, "SAMPLE_RULE_BROKEN");
+    }
+
+    @Test
+    void extraPropertiesOfAnExceptionAreAddedToTheResponse() {
+        MvcTestResult result = mvc.get().uri(BASE + "/business-rule-with-property").exchange();
+
+        assertProblem(result, HttpStatus.UNPROCESSABLE_CONTENT, "SAMPLE_RULE_BROKEN");
+        assertThat(result).bodyJson().extractingPath("$.sampleId").isEqualTo("abc-123");
+    }
+
+    @Test
+    void anExtraPropertyCannotReplaceAStandardMember() {
+        BusinessRuleViolationException ex = new BusinessRuleViolationException(
+                TestErrorCode.SAMPLE_RULE_BROKEN, "The rule was broken.");
+
+        for (String reserved : new String[] {"code", "detail", "requestId", "status", "errors"}) {
+            assertThatThrownBy(() -> ex.withProperty(reserved, "x"))
+                    .as(reserved).isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Test
@@ -247,6 +277,17 @@ class GlobalExceptionHandlerTests {
         @GetMapping("/business-rule")
         void businessRule() {
             throw new BusinessRuleViolationException(TestErrorCode.SAMPLE_RULE_BROKEN, "The rule was broken.");
+        }
+
+        @GetMapping("/business-rule-with-property")
+        void businessRuleWithProperty() {
+            throw new BusinessRuleViolationException(TestErrorCode.SAMPLE_RULE_BROKEN, "The rule was broken.")
+                    .withProperty("sampleId", "abc-123");
+        }
+
+        @GetMapping("/lock-timeout")
+        void lockTimeout() {
+            throw new PessimisticLockingFailureException("secret-lock-detail");
         }
 
         @GetMapping("/conflict")
