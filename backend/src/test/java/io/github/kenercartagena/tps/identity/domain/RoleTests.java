@@ -18,15 +18,17 @@ class RoleTests {
     }
 
     @Test
-    void operatorManagesAccountsButNotUsersNorTheLedger() {
-        assertThat(Role.OPERATOR.permissions())
-                .containsExactlyInAnyOrder(Permissions.ACCOUNT_READ, Permissions.ACCOUNT_MANAGE);
+    void operatorManagesAccountsAndMovesMoneyButNotUsersNorTheLedger() {
+        assertThat(Role.OPERATOR.permissions()).containsExactlyInAnyOrder(
+                Permissions.ACCOUNT_READ, Permissions.ACCOUNT_MANAGE, Permissions.TRANSACTION_READ,
+                Permissions.DEPOSIT_EXECUTE, Permissions.WITHDRAWAL_EXECUTE);
     }
 
     @Test
     void auditorCanOnlyRead() {
         assertThat(Role.AUDITOR.permissions()).containsExactlyInAnyOrder(
-                Permissions.USER_READ, Permissions.ACCOUNT_READ, Permissions.LEDGER_READ);
+                Permissions.USER_READ, Permissions.ACCOUNT_READ, Permissions.LEDGER_READ,
+                Permissions.TRANSACTION_READ);
     }
 
     @Test
@@ -47,6 +49,25 @@ class RoleTests {
                     .as("%s manages users and accounts", role)
                     .isFalse();
         }
+    }
+
+    /** Segregation of duties: whoever manages access never moves money. */
+    @Test
+    void noRoleManagesUsersAndMovesMoney() {
+        for (Role role : Role.values()) {
+            boolean movesMoney = role.permissions().contains(Permissions.DEPOSIT_EXECUTE)
+                    || role.permissions().contains(Permissions.WITHDRAWAL_EXECUTE);
+            assertThat(role.permissions().contains(Permissions.USER_MANAGE) && movesMoney)
+                    .as("%s manages users and moves money", role)
+                    .isFalse();
+        }
+    }
+
+    /** Auditors read everything and change nothing. */
+    @Test
+    void theAuditorNeverMovesMoney() {
+        assertThat(Role.AUDITOR.permissions())
+                .doesNotContain(Permissions.DEPOSIT_EXECUTE, Permissions.WITHDRAWAL_EXECUTE);
     }
 
     /** The ledger is the auditor's view of the books; operators work through accounts. */
