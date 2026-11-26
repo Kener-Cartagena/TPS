@@ -1,0 +1,1879 @@
+{
+  "components" : {
+    "schemas" : {
+      "AccountBalanceView" : {
+        "properties" : {
+          "accountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "accountNumber" : {
+            "type" : "string"
+          },
+          "asOf" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "availableBalance" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "ledgerBalance" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountEntryView" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "balanceAfter" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "direction" : {
+            "enum" : [ "DEBIT", "CREDIT" ],
+            "type" : "string"
+          },
+          "entryId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "journalEntryId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "postedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "reference" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountHolderView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "documentNumber" : {
+            "type" : "string"
+          },
+          "documentType" : {
+            "enum" : [ "DNI", "RTN", "PASSPORT" ],
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "holderType" : {
+            "enum" : [ "PERSON", "BUSINESS" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountMismatch" : {
+        "properties" : {
+          "balanceFromPostings" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "lastBalanceAfter" : {
+            "type" : "string"
+          },
+          "ledgerAccountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "storedBalance" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatusChangeView" : {
+        "properties" : {
+          "changedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "changedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "fromStatus" : {
+            "enum" : [ "ACTIVE", "SUSPENDED", "CLOSED" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "toStatus" : {
+            "enum" : [ "ACTIVE", "SUSPENDED", "CLOSED" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountView" : {
+        "properties" : {
+          "accountNumber" : {
+            "type" : "string"
+          },
+          "closedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "holderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ledgerAccountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "openedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "ACTIVE", "SUSPENDED", "CLOSED" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "SAVINGS", "CHECKING" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CashOperationRequest" : {
+        "properties" : {
+          "accountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "amount" : {
+            "example" : "1250.50",
+            "pattern" : "^[0-9]{1,17}(\\.[0-9]{1,2})?$",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "description" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "pattern" : "(?s).*\\S.*",
+            "type" : "string"
+          }
+        },
+        "required" : [ "accountId", "amount", "currency" ],
+        "type" : "object"
+      },
+      "ChangeAccountStatusRequest" : {
+        "properties" : {
+          "reason" : {
+            "maxLength" : 255,
+            "minLength" : 3,
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "ACTIVE", "SUSPENDED", "CLOSED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason", "status" ],
+        "type" : "object"
+      },
+      "ChangePasswordRequest" : {
+        "properties" : {
+          "currentPassword" : {
+            "maxLength" : 128,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "newPassword" : {
+            "maxLength" : 64,
+            "minLength" : 12,
+            "type" : "string"
+          }
+        },
+        "required" : [ "currentPassword", "newPassword" ],
+        "type" : "object"
+      },
+      "ChangeRoleRequest" : {
+        "properties" : {
+          "role" : {
+            "enum" : [ "SYSTEM_ADMIN", "OPERATOR", "AUDITOR" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "role" ],
+        "type" : "object"
+      },
+      "ChangeStatusRequest" : {
+        "properties" : {
+          "status" : {
+            "enum" : [ "ACTIVE", "DISABLED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "status" ],
+        "type" : "object"
+      },
+      "CreateUserRequest" : {
+        "properties" : {
+          "fullName" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "password" : {
+            "maxLength" : 64,
+            "minLength" : 12,
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "SYSTEM_ADMIN", "OPERATOR", "AUDITOR" ],
+            "type" : "string"
+          },
+          "username" : {
+            "minLength" : 1,
+            "pattern" : "^[A-Za-z0-9._-]{3,50}$",
+            "type" : "string"
+          }
+        },
+        "required" : [ "fullName", "password", "role", "username" ],
+        "type" : "object"
+      },
+      "CurrencyTotals" : {
+        "properties" : {
+          "balanced" : {
+            "type" : "boolean"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "totalCredits" : {
+            "type" : "string"
+          },
+          "totalDebits" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "JournalEntryView" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lines" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Line"
+            },
+            "type" : "array"
+          },
+          "postedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "reference" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LedgerAccountView" : {
+        "properties" : {
+          "allowNegativeBalance" : {
+            "type" : "boolean"
+          },
+          "balance" : {
+            "type" : "string"
+          },
+          "closedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "OPEN", "CLOSED" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LedgerPostingView" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "balanceAfter" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "direction" : {
+            "enum" : [ "DEBIT", "CREDIT" ],
+            "type" : "string"
+          },
+          "journalEntryId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineNumber" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "postedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "postingId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reference" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LedgerVerificationReport" : {
+        "properties" : {
+          "accountMismatches" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountMismatch"
+            },
+            "type" : "array"
+          },
+          "accountsChecked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "consistent" : {
+            "type" : "boolean"
+          },
+          "journalEntriesChecked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totals" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CurrencyTotals"
+            },
+            "type" : "array"
+          },
+          "unbalancedJournalEntries" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "verifiedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Line" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "balanceAfter" : {
+            "type" : "string"
+          },
+          "direction" : {
+            "enum" : [ "DEBIT", "CREDIT" ],
+            "type" : "string"
+          },
+          "ledgerAccountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineNumber" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "LoginRequest" : {
+        "properties" : {
+          "password" : {
+            "maxLength" : 128,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "username" : {
+            "maxLength" : 50,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "password", "username" ],
+        "type" : "object"
+      },
+      "OpenAccountRequest" : {
+        "properties" : {
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "holderId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "SAVINGS", "CHECKING" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "currency", "holderId", "type" ],
+        "type" : "object"
+      },
+      "PageMetadata" : {
+        "properties" : {
+          "number" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalElements" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "number", "size", "totalElements", "totalPages" ],
+        "type" : "object"
+      },
+      "PagedModelAccountEntryView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountEntryView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelAccountHolderView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountHolderView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelAccountStatusChangeView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountStatusChangeView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelAccountView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelLedgerAccountView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LedgerAccountView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelLedgerPostingView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LedgerPostingView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelTransactionView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TransactionView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "PagedModelUserView" : {
+        "properties" : {
+          "content" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UserView"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "$ref" : "#/components/schemas/PageMetadata"
+          }
+        },
+        "required" : [ "content", "page" ],
+        "type" : "object"
+      },
+      "RegisterAccountHolderRequest" : {
+        "properties" : {
+          "documentNumber" : {
+            "maxLength" : 25,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "documentType" : {
+            "enum" : [ "DNI", "RTN", "PASSPORT" ],
+            "type" : "string"
+          },
+          "fullName" : {
+            "maxLength" : 150,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "holderType" : {
+            "enum" : [ "PERSON", "BUSINESS" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "documentNumber", "documentType", "fullName", "holderType" ],
+        "type" : "object"
+      },
+      "TokenResponse" : {
+        "properties" : {
+          "accessToken" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expiresIn" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "tokenType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TransactionStatusChangeView" : {
+        "properties" : {
+          "changedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "changedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "fromStatus" : {
+            "enum" : [ "CREATED", "PENDING", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "REVERSED" ],
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "toStatus" : {
+            "enum" : [ "CREATED", "PENDING", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "REVERSED" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TransactionView" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "HNL", "USD" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "destinationAccountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "journalEntryId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "processedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "rejectionCode" : {
+            "type" : "string"
+          },
+          "rejectionDetail" : {
+            "type" : "string"
+          },
+          "sourceAccountId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "CREATED", "PENDING", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "REVERSED" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "DEPOSIT", "WITHDRAWAL" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UserView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "locked" : {
+            "type" : "boolean"
+          },
+          "role" : {
+            "enum" : [ "SYSTEM_ADMIN", "OPERATOR", "AUDITOR" ],
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "ACTIVE", "DISABLED" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "username" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "bearerFormat" : "JWT",
+        "description" : "Access token from POST /api/v1/auth/tokens",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  },
+  "externalDocs" : {
+    "description" : "Source code and documentation",
+    "url" : "https://github.com/Kener-Cartagena/TPS"
+  },
+  "info" : {
+    "description" : "REST API of the Transaction Processing System (TPS): accounts, double-entry ledger, transfers and payments through simulated providers. Errors follow RFC 9457 (Problem Details); see the API conventions in the repository.\n\nAuthentication: obtain a token with `POST /api/v1/auth/tokens`, then click **Authorize** and paste it.",
+    "license" : {
+      "name" : "Portfolio project, not for real funds"
+    },
+    "title" : "TPS API",
+    "version" : "not part of the contract"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/account-holders" : {
+      "get" : {
+        "description" : "Sorted by name. documentNumber finds a holder by its document, with or without dashes. Requires ACCOUNT_READ.",
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "documentNumber",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 25,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelAccountHolderView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List account holders",
+        "tags" : [ "Account holders" ]
+      },
+      "post" : {
+        "description" : "A person (DNI, RTN or passport) or a business (RTN). One holder per identity document. Requires ACCOUNT_MANAGE.",
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterAccountHolderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountHolderView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Register an account holder",
+        "tags" : [ "Account holders" ]
+      }
+    },
+    "/api/v1/account-holders/{holderId}" : {
+      "get" : {
+        "description" : "Requires ACCOUNT_READ.",
+        "operationId" : "get_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "holderId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountHolderView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get an account holder",
+        "tags" : [ "Account holders" ]
+      }
+    },
+    "/api/v1/accounts" : {
+      "get" : {
+        "description" : "Sorted by account number. Optional filters: holderId, status, accountNumber. Requires ACCOUNT_READ.",
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "holderId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "ACTIVE", "SUSPENDED", "CLOSED" ],
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "accountNumber",
+          "required" : false,
+          "schema" : {
+            "pattern" : "^[0-9]{12}$",
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelAccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List accounts",
+        "tags" : [ "Accounts" ]
+      },
+      "post" : {
+        "description" : "Opens an ACTIVE account with a zero balance and a new 12-digit account number. Requires ACCOUNT_MANAGE.",
+        "operationId" : "open",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OpenAccountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Open an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/accounts/{accountId}" : {
+      "get" : {
+        "description" : "Requires ACCOUNT_READ.",
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/balance" : {
+      "get" : {
+        "description" : "Ledger balance (all posted movements) and available balance (minus funds on hold; equal for now). Requires ACCOUNT_READ.",
+        "operationId" : "balance",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountBalanceView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get the balance of an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/entries" : {
+      "get" : {
+        "description" : "Newest first, with the balance after each movement. CREDIT is money in, DEBIT money out. Requires ACCOUNT_READ.",
+        "operationId" : "entries",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelAccountEntryView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List the movements of an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/status" : {
+      "put" : {
+        "description" : "ACTIVE ⇄ SUSPENDED, and ACTIVE or SUSPENDED → CLOSED. Closing is final and requires a zero balance. The reason is stored in the status history. Requires ACCOUNT_MANAGE.",
+        "operationId" : "changeStatus_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeAccountStatusRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Change the status of an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/status-history" : {
+      "get" : {
+        "description" : "Newest first; the oldest entry is the opening. Requires ACCOUNT_READ.",
+        "operationId" : "statusHistory_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelAccountStatusChangeView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List the status history of an account",
+        "tags" : [ "Accounts" ]
+      }
+    },
+    "/api/v1/auth/tokens" : {
+      "post" : {
+        "description" : "Exchanges a username and password for an access token (JWT). Any failure returns 401 INVALID_CREDENTIALS without saying why. Too many consecutive failures lock the account temporarily.",
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Log in",
+        "tags" : [ "Authentication" ]
+      }
+    },
+    "/api/v1/deposits" : {
+      "post" : {
+        "description" : "The account must be ACTIVE and in the given currency. Responses: 201 with the transaction when it completes; 422 Problem Details with the rule's code (INSUFFICIENT_FUNDS, ACCOUNT_SUSPENDED, ACCOUNT_CLOSED, CURRENCY_MISMATCH) and the transactionId when it is rejected. A retry with the same Idempotency-Key gets the same response plus `Idempotent-Replayed: true`; the same key with a different body is 422 IDEMPOTENCY_KEY_REUSED. Requires DEPOSIT_EXECUTE.",
+        "operationId" : "deposit",
+        "parameters" : [ {
+          "description" : "Unique per operation: generate one (a UUID is recommended) and send it again, unchanged, when retrying. A retry returns the first result instead of moving money twice.",
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CashOperationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TransactionView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Deposit cash into an account",
+        "tags" : [ "Transactions" ]
+      }
+    },
+    "/api/v1/ledger/accounts" : {
+      "get" : {
+        "description" : "Internal and customer accounts of the books, sorted by code. Requires LEDGER_READ.",
+        "operationId" : "listAccounts",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelLedgerAccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List ledger accounts",
+        "tags" : [ "Ledger" ]
+      }
+    },
+    "/api/v1/ledger/accounts/{ledgerAccountId}" : {
+      "get" : {
+        "description" : "Requires LEDGER_READ.",
+        "operationId" : "getAccount",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "ledgerAccountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LedgerAccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get a ledger account",
+        "tags" : [ "Ledger" ]
+      }
+    },
+    "/api/v1/ledger/accounts/{ledgerAccountId}/postings" : {
+      "get" : {
+        "description" : "Newest first, with the balance after each posting. Requires LEDGER_READ.",
+        "operationId" : "listPostings",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "ledgerAccountId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelLedgerPostingView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List the postings of a ledger account",
+        "tags" : [ "Ledger" ]
+      }
+    },
+    "/api/v1/ledger/journal-entries/{journalEntryId}" : {
+      "get" : {
+        "description" : "With all its lines. Requires LEDGER_READ.",
+        "operationId" : "getJournalEntry",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "journalEntryId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JournalEntryView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get a journal entry",
+        "tags" : [ "Ledger" ]
+      }
+    },
+    "/api/v1/ledger/verification" : {
+      "get" : {
+        "description" : "Recomputes every balance from the postings and checks that every journal entry is balanced and that total debits equal total credits in each currency. Scans the whole ledger. Requires LEDGER_READ.",
+        "operationId" : "verify",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LedgerVerificationReport"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Verify the ledger",
+        "tags" : [ "Ledger" ]
+      }
+    },
+    "/api/v1/transactions" : {
+      "get" : {
+        "description" : "Newest first, completed and rejected alike. Optional filters: accountId (money in or out of that account), type, status. Requires TRANSACTION_READ.",
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "accountId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "type",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DEPOSIT", "WITHDRAWAL" ],
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CREATED", "PENDING", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "REVERSED" ],
+            "type" : [ "string", "null" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelTransactionView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List transactions",
+        "tags" : [ "Transactions" ]
+      }
+    },
+    "/api/v1/transactions/{transactionId}" : {
+      "get" : {
+        "description" : "Requires TRANSACTION_READ.",
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "transactionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TransactionView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get a transaction",
+        "tags" : [ "Transactions" ]
+      }
+    },
+    "/api/v1/transactions/{transactionId}/status-history" : {
+      "get" : {
+        "description" : "Every status it went through, oldest first; the first entry is its creation. Requires TRANSACTION_READ.",
+        "operationId" : "statusHistory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "transactionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TransactionStatusChangeView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get the status history of a transaction",
+        "tags" : [ "Transactions" ]
+      }
+    },
+    "/api/v1/users" : {
+      "get" : {
+        "description" : "Sorted by username. Requires USER_READ.",
+        "operationId" : "list",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagedModelUserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "List users",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Requires USER_MANAGE.",
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateUserRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Create a user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me" : {
+      "get" : {
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get my profile",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/password" : {
+      "put" : {
+        "description" : "Requires the current password.",
+        "operationId" : "changeMyPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Change my password",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/{userId}" : {
+      "get" : {
+        "description" : "Requires USER_READ.",
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Get a user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/{userId}/role" : {
+      "put" : {
+        "description" : "Requires USER_MANAGE. Not allowed on yourself, nor if it would leave no active administrator. Takes effect at the user's next login.",
+        "operationId" : "changeRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeRoleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Change a user's role",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/{userId}/status" : {
+      "put" : {
+        "description" : "Requires USER_MANAGE. ACTIVE also unlocks a temporarily locked account. Not allowed on yourself, nor if it would leave no active administrator.",
+        "operationId" : "changeStatus",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeStatusRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Activate or disable a user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/withdrawals" : {
+      "post" : {
+        "description" : "The account must be ACTIVE, in the given currency, and have the funds. Responses: 201 with the transaction when it completes; 422 Problem Details with the rule's code (INSUFFICIENT_FUNDS, ACCOUNT_SUSPENDED, ACCOUNT_CLOSED, CURRENCY_MISMATCH) and the transactionId when it is rejected. A retry with the same Idempotency-Key gets the same response plus `Idempotent-Replayed: true`; the same key with a different body is 422 IDEMPOTENCY_KEY_REUSED. Requires WITHDRAWAL_EXECUTE.",
+        "operationId" : "withdraw",
+        "parameters" : [ {
+          "description" : "Unique per operation: generate one (a UUID is recommended) and send it again, unchanged, when retrying. A retry returns the first result instead of moving money twice.",
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : true,
+          "schema" : {
+            "pattern" : "^[A-Za-z0-9._:-]{1,64}$",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CashOperationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TransactionView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Withdraw cash from an account",
+        "tags" : [ "Transactions" ]
+      }
+    }
+  },
+  "security" : [ {
+    "bearerAuth" : [ ]
+  } ]
+}
