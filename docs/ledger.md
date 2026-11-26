@@ -58,9 +58,9 @@ Each entry is balanced (1000.00 = 1000.00, 250.50 = 250.50). On the customer's
 statement a **credit is money in** and a **debit is money out**, as on any bank
 statement.
 
-Deposits, withdrawals and transfers arrive with the transaction engine (Phases 4
-and 5). In Phase 3 the ledger exists, and is fully tested, but no endpoint moves
-money yet.
+Deposits and withdrawals are made through the transaction engine
+([transactions.md](transactions.md)), which posts these entries; transfers arrive in
+Phase 5. No endpoint posts to the ledger directly.
 
 ## Rules and where they are enforced
 
@@ -133,8 +133,9 @@ ACTIVE ⇄ SUSPENDED
 
 Every change requires a `reason` and is stored in the status history (who, when,
 from, to, why). The opening is the first entry. Closing an account also closes its
-ledger account. What each status allows (for example, whether a suspended account
-can receive money) is enforced by the transaction engine in Phase 4.
+ledger account. Only an `ACTIVE` account sends or receives money: a `SUSPENDED` or
+`CLOSED` account is refused by the transaction engine (`ACCOUNT_SUSPENDED`,
+`ACCOUNT_CLOSED`; see [transactions.md](transactions.md#rules)).
 
 ### Balances
 
@@ -142,8 +143,8 @@ can receive money) is enforced by the transaction engine in Phase 4.
 
 - `ledgerBalance`: the sum of all posted movements.
 - `availableBalance`: what the holder can use, the ledger balance minus funds on
-  hold. Holds arrive with pending operations (Phases 4 and 6); until then both
-  values are equal.
+  hold. Holds arrive with pending payments (Phase 6); until then both values
+  are equal.
 
 ## Endpoints
 
@@ -211,10 +212,8 @@ curl -X POST http://localhost:8080/api/v1/accounts \
 
 ## Known limitations
 
-- **No money moves through the API yet.** Deposits, withdrawals and transfers
-  arrive in Phases 4 and 5.
 - **No holds.** The available balance equals the ledger balance until pending
-  operations exist (Phases 4 and 6).
+  payments exist (Phase 6).
 - **Holders cannot be edited** (name or document) yet.
 - **The verification scans the whole ledger.** Fine at this project's volumes; a
   production ledger would verify per period or incrementally.

@@ -7,11 +7,13 @@ A backend platform for processing financial transactions — accounts, a
 double-entry ledger, internal transfers, payments through simulated providers,
 reversals, and reconciliation — built with **Java 25** and **Spring Boot 4**.
 
-> **Status: Phase 3 — accounts and financial ledger.** Account holders, customer
-> accounts and a double-entry ledger with immutable, balanced entries are in
-> place, enforced by the application and by PostgreSQL itself, safe under
-> concurrency and verifiable at any time. Money does not move through the API yet:
-> the transaction engine comes in Phase 4. See the [roadmap](#roadmap).
+> **Status: Phase 4 — transaction processing engine.** Deposits and withdrawals
+> move money through a transaction engine with a controlled lifecycle, idempotent
+> retries (`Idempotency-Key`: a retry never moves money twice), account status and
+> funds rules, and a fixed lock order that stays correct under concurrency. Every
+> movement is a balanced, immutable entry in a double-entry ledger, enforced by the
+> application and by PostgreSQL itself. Transfers and reversals come in Phase 5.
+> See the [roadmap](#roadmap).
 >
 > TPS is a portfolio project. It uses simulated financial providers and is not
 > certified or intended to process real customer funds.
@@ -65,10 +67,12 @@ and the REST rules in [docs/api-conventions.md](docs/api-conventions.md).
 │   ├── api-conventions.md  REST API and error format rules
 │   ├── security.md       Security model: roles, permissions, authentication
 │   ├── ledger.md         Accounts and ledger: double entry, rules, endpoints
+│   ├── transactions.md   Transaction engine: lifecycle, idempotency, concurrency
+│   ├── api/openapi.json  Reviewed snapshot of the API contract (checked in CI)
 │   └── adr/              Architecture Decision Records
 ├── .github/
 │   ├── workflows/        CI pipelines (GitHub Actions)
-│   ├── scripts/          Scripts used by the pipelines (migration guard, summary)
+│   ├── scripts/          Scripts used by the pipelines (migration and API guards, summary)
 │   └── dependabot.yml    Automated dependency updates
 └── docker-compose.yml    Local environment (PostgreSQL + optional backend)
 ```
@@ -125,7 +129,8 @@ paste the token. Roles, permissions and all endpoints:
 The administrator only manages users (segregation of duties). To work with
 accounts, create an `OPERATOR` (and an `AUDITOR` to read the ledger) with
 `POST /api/v1/users`, log in as that user, then follow the examples in
-[docs/ledger.md](docs/ledger.md#example-open-an-account-as-an-operator).
+[docs/ledger.md](docs/ledger.md#example-open-an-account-as-an-operator); to move
+money, [docs/transactions.md](docs/transactions.md#example-a-deposit-and-its-retry-as-an-operator).
 
 ### Run everything in containers
 
@@ -221,7 +226,7 @@ dependencies, GitHub Actions and Docker base images.
 | 1 | Core backend and API foundation | ✅ Done |
 | 2 | Identity, security and access control | ✅ Done |
 | 3 | Accounts and financial ledger | ✅ Done |
-| 4 | Transaction processing engine | Planned |
+| 4 | Transaction processing engine | ✅ Done |
 | 5 | Internal transfers and reversals | Planned |
 | 6 | Payment processing and simulated integrations | Planned |
 | 7 | Reconciliation and operational reliability | Planned |

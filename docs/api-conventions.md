@@ -45,7 +45,7 @@ security model, the permission matrix and the configuration are in
 | `403 Forbidden` | Valid token, missing permission | `ACCESS_DENIED` |
 | `404 Not Found` | Unknown endpoint or resource (authenticated callers) | `NOT_FOUND` or a module code, e.g. `USER_NOT_FOUND` |
 | `405`, `406`, `415` | Wrong method, `Accept` or `Content-Type` | `METHOD_NOT_ALLOWED`, `NOT_ACCEPTABLE`, `UNSUPPORTED_MEDIA_TYPE` |
-| `409 Conflict` | Conflicts with the current state: duplicate, concurrent modification | module code, e.g. `USERNAME_ALREADY_EXISTS`; `CONCURRENT_MODIFICATION` when another request changed the resource at the same time (read it again and retry) |
+| `409 Conflict` | Conflicts with the current state: duplicate, concurrent modification | module code, e.g. `USERNAME_ALREADY_EXISTS`; `CONCURRENT_MODIFICATION` when another request changed the resource at the same time, or held it too long (nothing was saved: read it again and retry) |
 | `422 Unprocessable Content` | Valid request that breaks a business rule | module code, e.g. `INSUFFICIENT_FUNDS` |
 | `500 Internal Server Error` | Unexpected failure | `INTERNAL_ERROR` |
 
@@ -165,6 +165,24 @@ throw new BusinessRuleViolationException(AccountErrorCode.ACCOUNT_SUSPENDED,
 
 The exception message becomes the `detail` of the response, so it must be
 written for API clients and must not contain sensitive data.
+
+## Idempotency
+
+Every request that moves money (`POST /api/v1/deposits`, `/withdrawals`, and later
+transfers and payments) requires an `Idempotency-Key` header: a value the client
+generates once per operation (a UUID is recommended; 1 to 64 letters, digits, `.`,
+`_`, `:`, `-`) and sends again, unchanged, when retrying it.
+
+| Request | Response |
+|---|---|
+| New key | Processed normally |
+| Same key, same request | The first result again (same status and body) with `Idempotent-Replayed: true`; nothing is processed |
+| Same key, different request | `422 IDEMPOTENCY_KEY_REUSED` |
+| Missing or malformed key | `400` |
+
+Keys are unique per user and never expire. Details and examples in
+[transactions.md](transactions.md#idempotency-safe-retries); the reasoning in
+[ADR 0007](adr/0007-transaction-engine-and-idempotency.md).
 
 ## Request id
 
