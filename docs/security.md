@@ -35,7 +35,9 @@ A permission is added in the phase that introduces the operation it protects:
 | `ACCOUNT_READ` | | ✔ | ✔ | 3 ✅ |
 | `ACCOUNT_MANAGE` | | ✔ | | 3 ✅ |
 | `LEDGER_READ` | | | ✔ | 3 ✅ |
-| `TRANSACTION_READ` | | ✔ | ✔ | 4 |
+| `TRANSACTION_READ` | | ✔ | ✔ | 4 ✅ |
+| `DEPOSIT_EXECUTE` | | ✔ | | 4 ✅ |
+| `WITHDRAWAL_EXECUTE` | | ✔ | | 4 ✅ |
 | `TRANSFER_EXECUTE` | | ✔ | | 5 |
 | `REVERSAL_EXECUTE` | | ✔ | | 5 |
 | `PAYMENT_EXECUTE` | | ✔ | | 6 |
@@ -67,6 +69,8 @@ Rules enforced for every caller:
 
 Account holders, accounts and the ledger (`ACCOUNT_READ`, `ACCOUNT_MANAGE`,
 `LEDGER_READ`): see the endpoint table in [ledger.md](ledger.md#endpoints).
+Deposits, withdrawals and transactions (`DEPOSIT_EXECUTE`, `WITHDRAWAL_EXECUTE`,
+`TRANSACTION_READ`): see [transactions.md](transactions.md#endpoints).
 
 Also public: `/actuator/health/**`, `/actuator/info`, `/v3/api-docs`,
 `/swagger-ui.html`. Everything else requires a token; unknown URLs answer `401`

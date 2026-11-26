@@ -16,7 +16,11 @@ public enum AccountsErrorCode implements ErrorCode {
     /** 422: the account cannot change from its current status to the requested one. */
     INVALID_STATUS_TRANSITION,
     /** 422: only an account with a zero balance can be closed. */
-    ACCOUNT_HAS_BALANCE;
+    ACCOUNT_HAS_BALANCE,
+    /** 422: the account is suspended: no money can enter or leave it. */
+    ACCOUNT_SUSPENDED,
+    /** 422: the account is closed: no money can enter or leave it. */
+    ACCOUNT_CLOSED;
 
     @Override
     public String code() {

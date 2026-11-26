@@ -1,4 +1,4 @@
-package io.github.kenercartagena.tps.accounts.domain;
+package io.github.kenercartagena.tps.accounts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,6 +30,17 @@ class AccountStatusTests {
     void noStatusChangesToItself() {
         for (AccountStatus status : AccountStatus.values()) {
             assertThat(status.canChangeTo(status)).as(status.name()).isFalse();
+        }
+    }
+
+    /** ADR 0007: a suspended account is frozen in both directions, a closed one too. */
+    @Test
+    void onlyAnActiveAccountMovesMoney() {
+        assertThat(AccountStatus.ACTIVE.allowsDebits()).isTrue();
+        assertThat(AccountStatus.ACTIVE.allowsCredits()).isTrue();
+        for (AccountStatus status : EnumSet.of(AccountStatus.SUSPENDED, AccountStatus.CLOSED)) {
+            assertThat(status.allowsDebits()).as("%s allows debits", status).isFalse();
+            assertThat(status.allowsCredits()).as("%s allows credits", status).isFalse();
         }
     }
 

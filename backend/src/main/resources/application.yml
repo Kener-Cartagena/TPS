@@ -88,6 +88,12 @@ tps:
     # First administrator, created only if the database has no users. In production
     # set TPS_SECURITY_BOOTSTRAP_ADMIN_USERNAME / _PASSWORD for the first start only.
     # bootstrap.admin: { username, password, full-name }
+  # ---- Transaction engine (transactions module, ADR 0007) ----------------------
+  transactions:
+    # How long an operation waits for an account (or a duplicate request with the same
+    # Idempotency-Key) locked by another one, before giving up with 409
+    # CONCURRENT_MODIFICATION. Nothing is saved then, so the client can retry.
+    lock-timeout: 5s
 
 # ---- Logging -----------------------------------------------------------------
 logging:

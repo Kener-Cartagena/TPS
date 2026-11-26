@@ -1,5 +1,7 @@
 package io.github.kenercartagena.tps.ledger;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 
@@ -37,6 +39,21 @@ public interface Ledger {
      *         account does not exist
      */
     PostedJournalEntry post(JournalEntryRequest entry);
+
+    /**
+     * Locks the accounts an entry will use, so the caller can check their balances before
+     * posting, knowing they cannot change until its transaction ends. Accounts are locked in
+     * ascending id order, the same order {@link #post} uses, so callers never deadlock with
+     * each other or with other postings; {@code post} then finds them already locked.
+     *
+     * <p>Must be called inside the caller's database transaction: a lock outside one would
+     * be released at once.
+     *
+     * @return the current balance of each account, by id
+     * @throws io.github.kenercartagena.tps.shared.error.ResourceNotFoundException if an
+     *         account does not exist
+     */
+    Map<UUID, LedgerBalance> lockForPosting(Set<UUID> ledgerAccountIds);
 
     /**
      * The current balance of an account.

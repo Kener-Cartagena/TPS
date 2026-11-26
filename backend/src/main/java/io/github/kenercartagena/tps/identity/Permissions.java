@@ -33,6 +33,15 @@ public final class Permissions {
     /** View the general ledger: internal accounts, journal entries and its verification. */
     public static final String LEDGER_READ = "LEDGER_READ";
 
+    /** View transactions and their status history. */
+    public static final String TRANSACTION_READ = "TRANSACTION_READ";
+
+    /** Deposit money into a customer account (cash at a branch). */
+    public static final String DEPOSIT_EXECUTE = "DEPOSIT_EXECUTE";
+
+    /** Withdraw money from a customer account (cash at a branch). */
+    public static final String WITHDRAWAL_EXECUTE = "WITHDRAWAL_EXECUTE";
+
     private Permissions() {
     }
 }
