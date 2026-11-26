@@ -1,6 +1,6 @@
 package io.github.kenercartagena.tps.accounts.web;
 
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.accounts.domain.AccountStatusChange;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

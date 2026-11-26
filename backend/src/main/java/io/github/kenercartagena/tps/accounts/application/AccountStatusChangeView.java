@@ -1,6 +1,6 @@
 package io.github.kenercartagena.tps.accounts.application;
 
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.accounts.domain.AccountStatusChange;
 import java.time.Instant;
 import java.util.UUID;

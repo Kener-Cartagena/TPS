@@ -7,7 +7,7 @@ import io.github.kenercartagena.tps.accounts.application.AccountService;
 import io.github.kenercartagena.tps.accounts.application.AccountStatusChangeView;
 import io.github.kenercartagena.tps.accounts.application.AccountView;
 import io.github.kenercartagena.tps.accounts.domain.AccountNumber;
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.identity.CurrentUser;
 import io.github.kenercartagena.tps.identity.Permissions;
 import io.github.kenercartagena.tps.shared.web.ApiPaths;

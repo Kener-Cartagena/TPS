@@ -11,7 +11,7 @@ import io.github.kenercartagena.tps.accounts.application.AccountHolderService;
 import io.github.kenercartagena.tps.accounts.application.AccountHolderView;
 import io.github.kenercartagena.tps.accounts.application.AccountService;
 import io.github.kenercartagena.tps.accounts.application.AccountView;
-import io.github.kenercartagena.tps.accounts.domain.AccountStatus;
+import io.github.kenercartagena.tps.accounts.AccountStatus;
 import io.github.kenercartagena.tps.accounts.domain.AccountType;
 import io.github.kenercartagena.tps.accounts.domain.DocumentType;
 import io.github.kenercartagena.tps.accounts.domain.HolderType;
